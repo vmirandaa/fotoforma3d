@@ -12,7 +12,18 @@ function setTheme(isDark, savePreference = false) {
   }
 }
 
-try { setTheme(localStorage.getItem('forma-theme') === 'dark'); } catch { setTheme(false); }
+// Sin una elección guardada, el tema sigue al del dispositivo (y cambia con él); el botón fija una preferencia.
+const deviceTheme = window.matchMedia('(prefers-color-scheme: dark)');
+function savedTheme() {
+  try {
+    const saved = localStorage.getItem('forma-theme');
+    return saved === 'dark' || saved === 'light' ? saved : null;
+  } catch { return null; }
+}
+setTheme(savedTheme() ? savedTheme() === 'dark' : deviceTheme.matches);
+deviceTheme.addEventListener('change', (event) => {
+  if (!savedTheme()) setTheme(event.matches);
+});
 themeButton.addEventListener('click', () => {
   const nextIsDark = !document.body.classList.contains('theme-dark');
   if (document.startViewTransition) document.startViewTransition(() => setTheme(nextIsDark, true));
