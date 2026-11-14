@@ -3,6 +3,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { randomUUID, createHash, timingSafeEqual } from 'node:crypto';
+import { sendOrderEmails, mailConfig } from './correo.mjs';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT || 4173);
@@ -215,6 +216,12 @@ async function handleOrder(request, response) {
   task.orderCode = code;
   console.log('Nueva reserva ' + code + ' · ' + size.medida + (modelFile ? '' : ' · SIN COPIA DEL MODELO'));
   sendJson(response, 201, { code });
+  // El aviso por correo va después de responder: si falla, la reserva ya quedó guardada.
+  sendOrderEmails(order).then((mail) => {
+    if (!mail.configured) return;
+    if (mail.shop && mail.customer) console.log('Correos de la reserva ' + code + ' enviados.');
+    else console.error('Reserva ' + code + ': aviso al taller ' + (mail.shop ? 'enviado' : 'FALLÓ') + ', confirmación al cliente ' + (mail.customer ? 'enviada' : 'FALLÓ') + '. ' + (mail.error || ''));
+  });
 }
 
 async function handleStatus(id, response) {
@@ -358,7 +365,7 @@ async function serveStatic(urlPath, response) {
   if (filePath !== ROOT && !filePath.startsWith(ROOT + path.sep)) return sendJson(response, 403, { error: 'Ruta no permitida.' });
   const relativePath = path.relative(ROOT, filePath).toLowerCase();
   const topFolder = relativePath.split(path.sep)[0];
-  if (['.env', '.env.example', 'server.mjs', 'package.json', 'readme.md', '.gitignore'].includes(relativePath) || topFolder === 'pedidos' || topFolder.startsWith('.') || topFolder.startsWith('_')) {
+  if (['.env', '.env.example', 'package.json', 'package-lock.json', 'readme.md', '.gitignore'].includes(relativePath) || relativePath.endsWith('.mjs') || ['pedidos', 'node_modules'].includes(topFolder) || topFolder.startsWith('.') || topFolder.startsWith('_')) {
     return sendJson(response, 404, { error: 'No encontrado.' });
   }
   try {
@@ -394,4 +401,5 @@ const server = http.createServer(async (request, response) => {
 server.listen(PORT, HOST, () => {
   console.log('FORMA disponible en http://' + HOST + ':' + PORT);
   console.log(getApiKey() ? 'Servicio de generación configurado.' : 'Configura RODIN_API_KEY para activar modelos 3D.');
+  console.log(mailConfig() ? 'Avisos por correo activados.' : 'Avisos por correo desactivados: faltan SMTP_HOST, SMTP_USER o SMTP_PASS.');
 });
