@@ -2,7 +2,7 @@ import http from 'node:http';
 import path from 'node:path';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { randomUUID } from 'node:crypto';
+import { randomUUID, createHash, timingSafeEqual } from 'node:crypto';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT || 4173);
@@ -14,6 +14,11 @@ const TIERS = ['Gen-2.5-Low', 'Gen-2.5-Medium', 'Gen-2.5-High'];
 const SPECIES = { perro: 'dog', gato: 'cat', otro: 'pet animal' };
 const tasks = new Map();
 const previewLog = new Map();
+const ORDERS_FILE = path.join(ORDERS_DIR, 'pedidos.jsonl');
+const STATES_FILE = path.join(ORDERS_DIR, 'estados.json');
+const ORDER_STATES = ['nueva', 'contactada', 'pagada', 'enviada', 'cancelada'];
+const ORDER_CODE = /^F-[0-9A-F]{8}$/;
+const adminFailures = new Map();
 
 function loadLocalEnv() {
   const envPath = path.join(ROOT, '.env');
@@ -206,7 +211,7 @@ async function handleOrder(request, response) {
     modelFile,
     providerUuid: task.providerUuid
   };
-  await fs.promises.appendFile(path.join(ORDERS_DIR, 'pedidos.jsonl'), JSON.stringify(order) + '\n', 'utf8');
+  await fs.promises.appendFile(ORDERS_FILE,JSON.stringify(order) + '\n', 'utf8');
   task.orderCode = code;
   console.log('Nueva reserva ' + code + ' · ' + size.medida + (modelFile ? '' : ' · SIN COPIA DEL MODELO'));
   sendJson(response, 201, { code });
@@ -259,6 +264,79 @@ async function handleModel(id, response) {
   response.end();
 }
 
+// --- Panel privado de reservas (admin.html). Se activa definiendo ADMIN_PASSWORD en .env. ---
+function adminKeyMatches(request) {
+  const expected = process.env.ADMIN_PASSWORD?.trim();
+  if (!expected) return null;
+  let given = String(request.headers.authorization || '').replace(/^Bearer\s+/i, '');
+  try { given = decodeURIComponent(given); } catch { return false; }
+  const digest = (value) => createHash('sha256').update(value).digest();
+  return timingSafeEqual(digest(given), digest(expected));
+}
+async function readJsonFile(filePath, fallback) {
+  try { return JSON.parse(await fs.promises.readFile(filePath, 'utf8')); } catch { return fallback; }
+}
+async function readOrders() {
+  let text = '';
+  try { text = await fs.promises.readFile(ORDERS_FILE, 'utf8'); } catch { return []; }
+  const states = await readJsonFile(STATES_FILE, {});
+  const orders = [];
+  for (const line of text.split('\n')) {
+    if (!line.trim()) continue;
+    try {
+      const order = JSON.parse(line);
+      if (!ORDER_CODE.test(order.code)) continue;
+      const hasModel = Boolean(order.modelFile) && fs.existsSync(path.join(ORDERS_DIR, order.code + '.glb'));
+      const state = states[order.code];
+      orders.push({ ...order, hasModel, status: ORDER_STATES.includes(state?.status) ? state.status : 'nueva' });
+    } catch { /* línea dañada: se omite */ }
+  }
+  return orders.reverse();
+}
+async function handleAdmin(request, response, pathname) {
+  const ip = request.socket.remoteAddress || 'desconocida';
+  const since = Date.now() - 15 * 60 * 1000;
+  const failures = (adminFailures.get(ip) || []).filter((time) => time > since);
+  if (failures.length >= 10) return sendJson(response, 429, { error: 'Demasiados intentos. Espera unos minutos.' });
+  const authorized = adminKeyMatches(request);
+  if (authorized === null) return sendJson(response, 503, { error: 'El panel está desactivado. Define ADMIN_PASSWORD en el archivo .env y reinicia el servidor.' });
+  if (!authorized) {
+    failures.push(Date.now());
+    adminFailures.set(ip, failures);
+    return sendJson(response, 401, { error: 'Clave incorrecta.' });
+  }
+
+  if (request.method === 'GET' && pathname === '/api/admin/orders') {
+    return sendJson(response, 200, { orders: await readOrders(), states: ORDER_STATES });
+  }
+  const modelMatch = pathname.match(/^\/api\/admin\/model\/(F-[0-9A-F]{8})$/);
+  if (request.method === 'GET' && modelMatch) {
+    const filePath = path.join(ORDERS_DIR, modelMatch[1] + '.glb');
+    let stat;
+    try { stat = await fs.promises.stat(filePath); } catch { return sendJson(response, 404, { error: 'Esta reserva no tiene copia del modelo.' }); }
+    response.writeHead(200, {
+      'content-type': 'model/gltf-binary',
+      'content-length': stat.size,
+      'content-disposition': 'attachment; filename="' + modelMatch[1] + '.glb"',
+      'cache-control': 'private, no-store',
+      'x-content-type-options': 'nosniff'
+    });
+    return fs.createReadStream(filePath).pipe(response);
+  }
+  const statusMatch = pathname.match(/^\/api\/admin\/orders\/(F-[0-9A-F]{8})\/status$/);
+  if (request.method === 'POST' && statusMatch) {
+    let body;
+    try { body = JSON.parse((await readRequestBody(request, 2 * 1024)).toString('utf8')); } catch { return sendJson(response, 400, { error: 'Solicitud no válida.' }); }
+    if (!ORDER_STATES.includes(body?.status)) return sendJson(response, 400, { error: 'Estado no válido.' });
+    if (!(await readOrders()).some((order) => order.code === statusMatch[1])) return sendJson(response, 404, { error: 'No existe esa reserva.' });
+    const states = await readJsonFile(STATES_FILE, {});
+    states[statusMatch[1]] = { status: body.status, updatedAt: new Date().toISOString() };
+    await fs.promises.writeFile(STATES_FILE, JSON.stringify(states, null, 2), 'utf8');
+    return sendJson(response, 200, { code: statusMatch[1], status: body.status });
+  }
+  return sendJson(response, 404, { error: 'No encontrado.' });
+}
+
 function contentType(filePath) {
   const extension = path.extname(filePath).toLowerCase();
   return ({
@@ -301,6 +379,7 @@ const server = http.createServer(async (request, response) => {
     }
     if (request.method === 'POST' && parsed.pathname === '/api/generate') return await handleGenerate(request, response);
     if (request.method === 'POST' && parsed.pathname === '/api/order') return await handleOrder(request, response);
+    if (parsed.pathname.startsWith('/api/admin/')) return await handleAdmin(request, response, parsed.pathname);
     const statusMatch = parsed.pathname.match(/^\/api\/status\/([0-9a-f-]{36})$/i);
     if (request.method === 'GET' && statusMatch) return await handleStatus(statusMatch[1], response);
     const modelMatch = parsed.pathname.match(/^\/api\/model\/([0-9a-f-]{36})$/i);

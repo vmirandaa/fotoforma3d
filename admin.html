@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#f6f4ee">
+  <title>Reservas | FORMA</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="type-scale.css">
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body id="top" class="admin-page">
+  <div class="topline"><span>FORMA · PANEL PRIVADO</span><a href="index.html">Ver el sitio <b>↗</b></a></div>
+  <header class="header">
+    <a class="wordmark" href="index.html" aria-label="FORMA, inicio"><span class="brand-symbol">F</span>FORMA<span class="wordmark-dot">.</span></a>
+    <button class="menu-toggle" aria-label="Abrir menú" aria-expanded="false">☰</button>
+    <nav class="nav" aria-label="Principal">
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-pressed="false"><span aria-hidden="true">◐</span><span id="theme-label">Modo oscuro</span></button>
+      <button class="theme-toggle" id="admin-logout" type="button" hidden>Salir</button>
+    </nav>
+  </header>
+  <main class="admin-main">
+    <form class="admin-login" id="admin-login">
+      <span class="eyebrow">Panel privado</span>
+      <h1>Reservas</h1>
+      <p>Ingresa la clave del panel para ver las reservas recibidas.</p>
+      <label for="admin-key">Clave</label>
+      <input id="admin-key" type="password" autocomplete="current-password" required>
+      <button class="button button-dark" type="submit">Entrar <span>↗</span></button>
+      <p class="admin-message" id="login-message" role="status" aria-live="polite"></p>
+    </form>
+
+    <section class="admin-board" id="admin-board" hidden>
+      <div class="admin-heading">
+        <div><span class="eyebrow">Panel privado</span><h1>Reservas</h1></div>
+        <button class="button button-dark" id="admin-refresh" type="button">Actualizar <span>⟳</span></button>
+      </div>
+      <div class="admin-summary" id="admin-summary"></div>
+      <p class="admin-message" id="board-message" role="status" aria-live="polite"></p>
+      <div class="admin-orders" id="admin-orders"></div>
+    </section>
+  </main>
+  <script src="script.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>

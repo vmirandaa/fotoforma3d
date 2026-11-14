@@ -27,6 +27,8 @@ El servidor arma el prompt para mascotas en `buildPetPrompt` (`server.mjs`); el 
 
 ## Reservas
 
-Al reservar, el servidor agrega una línea a `pedidos/pedidos.jsonl` (código, talla, precio, nombre, correo, mascota y comentarios) y guarda el modelo como `pedidos/<código>.glb`. Esa carpeta no se sirve por la web ni entra a git. Todavía no hay pago en línea ni aviso por correo: revisa el archivo y contacta a cada cliente.
+Al reservar, el servidor agrega una línea a `pedidos/pedidos.jsonl` (código, talla, precio, nombre, correo, mascota y comentarios) y guarda el modelo como `pedidos/<código>.glb`. Esa carpeta no se sirve por la web ni entra a git. Todavía no hay pago en línea ni aviso por correo.
+
+Para revisarlas, define `ADMIN_PASSWORD` en `.env`, reinicia el servidor y abre [http://127.0.0.1:4173/admin.html](http://127.0.0.1:4173/admin.html). El panel lista las reservas, permite marcar su estado (nueva, contactada, pagada, enviada o cancelada; se guarda en `pedidos/estados.json`) y descargar el modelo de cada una. La página no está enlazada desde el sitio y sin la clave no entrega ningún dato. Si publicas el sitio, hazlo con HTTPS para que la clave no viaje en claro.
 
 Las vistas previas en curso se mantienen en memoria, así que se pierden al reiniciar el servidor; las reservas ya registradas no.
