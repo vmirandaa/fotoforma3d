@@ -1,0 +1,10 @@
+{
+  "moneda": "CLP",
+  "tallas": [
+    { "id": "S", "nombre": "Talla S", "medida": "8 cm", "precio": 17990, "descripcion": "Pequeña, para el escritorio o el velador." },
+    { "id": "M", "nombre": "Talla M", "medida": "10 cm", "precio": 22990, "descripcion": "El tamaño equilibrado para una repisa.", "destacada": true },
+    { "id": "L", "nombre": "Talla L", "medida": "12 cm", "precio": 31990, "descripcion": "Más presencia y más detalle a la vista." },
+    { "id": "XL", "nombre": "Talla XL", "medida": "15 cm", "precio": 45990, "descripcion": "La pieza protagonista de la casa." }
+  ],
+  "envio": "El envío se cotiza según tu comuna al confirmar el pedido."
+}

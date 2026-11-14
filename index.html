@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f6f4ee">
+  <meta name="description" content="Convierte la foto de tu perro o gato en una figura 3D. Mira la vista previa gratis, elige el tamaño y recíbela impresa.">
+  <title>FORMA — La figura 3D de tu mascota, desde su foto</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="type-scale.css">
+  <link rel="stylesheet" href="mascotas.css">
+</head>
+<body id="top">
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="pet-shape" viewBox="0 0 120 150">
+      <ellipse class="pet-base" cx="60" cy="139" rx="44" ry="8"/>
+      <path class="pet-body" d="M86 118c16 2 24-10 20-24" fill="none" stroke-width="9" stroke-linecap="round"/>
+      <ellipse class="pet-fill" cx="60" cy="103" rx="31" ry="37"/>
+      <path class="pet-fill" d="M36 40 31 10l24 18zM84 40l5-30-24 18z"/>
+      <circle class="pet-fill" cx="60" cy="52" r="27"/>
+      <ellipse class="pet-light" cx="60" cy="63" rx="13" ry="10"/>
+      <ellipse class="pet-light" cx="60" cy="112" rx="15" ry="22"/>
+      <circle class="pet-dark" cx="49" cy="48" r="3.2"/>
+      <circle class="pet-dark" cx="71" cy="48" r="3.2"/>
+      <ellipse class="pet-dark" cx="60" cy="59" rx="4.5" ry="3.2"/>
+      <ellipse class="pet-light" cx="45" cy="137" rx="10" ry="5"/>
+      <ellipse class="pet-light" cx="75" cy="137" rx="10" ry="5"/>
+    </symbol>
+  </svg>
+
+  <div class="topline"><span>FIGURAS 3D DE MASCOTAS · HECHAS A PEDIDO</span><a href="#como-funciona">Mira cómo funciona <b>↘</b></a></div>
+  <header class="header">
+    <a class="wordmark" href="#inicio" aria-label="FORMA, inicio"><span class="brand-symbol">F</span>FORMA<span class="wordmark-dot">.</span></a>
+    <button class="menu-toggle" aria-label="Abrir menú" aria-expanded="false">☰</button>
+    <nav class="nav" aria-label="Principal">
+      <a href="#como-funciona">Cómo funciona</a>
+      <a href="#la-foto">Qué foto sirve</a>
+      <a href="#precios">Tamaños y precios</a>
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-pressed="false"><span aria-hidden="true">◐</span><span id="theme-label">Modo oscuro</span></button>
+      <a href="crear.html" class="nav-cta">Crear mi figura <span>↗</span></a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero" id="inicio">
+      <div class="hero-copy">
+        <div class="eyebrow"><span class="live-dot"></span> Tu mascota, en tres dimensiones</div>
+        <h1>Su foto.<br>Su figura <em>en 3D.</em></h1>
+        <p>Sube una foto de tu perro o gato y mira cómo quedaría su figura antes de pagar. Si te gusta, eliges el tamaño y la imprimimos para ti.</p>
+        <div class="hero-actions"><a class="button button-dark" href="crear.html">Crear mi figura <span>↗</span></a><a class="quiet-link" href="#como-funciona">Así funciona <span>↓</span></a></div>
+        <div class="hero-meta"><div><span class="meta-number">01</span><span>SUBE SU FOTO</span></div><i></i><div><span class="meta-number">02</span><span>MIRA LA VISTA PREVIA</span></div><i></i><div><span class="meta-number">03</span><span>PIDE TU FIGURA</span></div></div>
+      </div>
+      <div class="hero-visual" aria-label="Ilustración: la foto de una mascota convertida en una figura 3D">
+        <div class="visual-grid"></div><div class="orbit orbit-a"></div><div class="orbit orbit-b"></div>
+        <div class="image-tile"><span class="tile-label">SU FOTO</span><div class="tile-scene pet-photo"><svg class="pet-art" viewBox="0 0 120 150" aria-hidden="true"><use href="#pet-shape"/></svg></div><span class="tile-corner">01 / 02</span></div>
+        <div class="transform-arrow">↗</div>
+        <div class="relief-tile"><span class="tile-label">SU FIGURA 3D</span><div class="relief-scene pet-figure"><svg class="pet-art" viewBox="0 0 120 150" aria-hidden="true"><use href="#pet-shape"/></svg></div><span class="tile-corner">02 / 02</span></div>
+        <div class="visual-sticker"><span>◉</span><small>VISTA PREVIA<br>GRATIS</small></div><div class="visual-caption">De su foto<br>a una figura para la repisa.</div>
+      </div>
+    </section>
+
+    <section class="ticker" aria-label="Lo esencial"><div><span>VISTA PREVIA GRATIS</span><b>✳</b><span>MODELADA DESDE SU FOTO</span><b>✳</b><span>TÚ ELIGES EL TAMAÑO</span><b>✳</b><span>IMPRESA A PEDIDO</span><b>✳</b><span>LLEGA EN BLANCO, LISTA PARA PINTAR</span></div></section>
+
+    <section class="how-section" id="como-funciona">
+      <div class="how-heading"><span class="eyebrow">De una foto a una figura</span><h2>Primero la ves.<br><em>Después decides.</em></h2><p>No pagas por adelantado: generamos la vista previa en 3D y solo si te convence haces el pedido.</p></div>
+      <div class="how-steps">
+        <article><div class="step-top"><span>01</span><span>↗</span></div><div class="step-line line-upload">↑</div><h3>Sube su foto</h3><p>Una sola foto clara, de cuerpo completo, es suficiente. Cuéntanos su nombre y si es perro o gato.</p></article>
+        <article><div class="step-top"><span>02</span><span>↗</span></div><div class="step-line line-adjust">◒</div><h3>Revisa la vista previa</h3><p>En unos minutos puedes girar su figura en 3D y revisarla por todos lados. Si no te convence, prueba con otra foto.</p></article>
+        <article><div class="step-top"><span>03</span><span>↓</span></div><div class="step-line line-download">▤</div><h3>Elige el tamaño y pídela</h3><p>Escoge la talla, déjanos tus datos y te escribimos para confirmar el pago y el envío.</p></article>
+      </div>
+    </section>
+
+    <section class="section" id="la-foto">
+      <div class="section-intro"><div><span class="eyebrow">Antes de subirla</span><h2>La foto que<br><em>mejor funciona.</em></h2></div><p>La figura sale de lo que se ve en la foto. Mientras más clara sea, más se parecerá a tu mascota.</p></div>
+      <div class="offer-grid tip-grid">
+        <article class="offer"><span class="offer-kicker">01 / ENCUADRE</span><div class="offer-icon">▣</div><h3>De cuerpo completo</h3><p>Que se vean las orejas, las patas y la cola. Lo que queda fuera del cuadro hay que inventarlo.</p></article>
+        <article class="offer"><span class="offer-kicker">02 / LUZ</span><div class="offer-icon">☼</div><h3>Con buena luz</h3><p>Luz de día, sin filtros ni sombras duras. En mascotas de pelo oscuro esto marca la diferencia.</p></article>
+        <article class="offer"><span class="offer-kicker">03 / ÁNGULO</span><div class="offer-icon">◎</div><h3>A su altura</h3><p>Tomada a la altura de sus ojos, sola y sin objetos que la tapen: correas, juguetes o manos.</p></article>
+      </div>
+      <p class="fine-print">Los detalles muy finos, como pelos sueltos o bigotes, se simplifican para que la figura se pueda imprimir.</p>
+    </section>
+
+    <!-- CASOS REALES: cuando tengas fotos de figuras impresas, agrega aquí una galería "su foto → su figura". -->
+
+    <section class="price-section section" id="precios">
+      <div class="section-intro"><div><span class="eyebrow">Un precio por tamaño</span><h2>Elige cuánto<br><em>espacio ocupa.</em></h2></div><p>La medida corresponde al lado más largo de la figura. Todos los tamaños incluyen el modelado desde su foto y la vista previa.</p></div>
+      <div class="size-grid" id="size-grid" aria-live="polite"><p class="size-fallback">Cargando tamaños…</p></div>
+      <p class="fine-print" id="shipping-note"></p>
+      <div class="price-cta"><a class="button button-dark" href="crear.html">Ver mi figura antes de pagar <span>↗</span></a><span>La vista previa no tiene costo.</span></div>
+    </section>
+
+    <section class="faq-section" id="contacto">
+      <div class="faq-intro"><span class="eyebrow">Antes de empezar</span><h2>Preguntas<br><em>frecuentes.</em></h2><p>¿Tienes un caso especial, como dos mascotas juntas o una foto antigua? Escríbenos.</p><a href="mailto:hola@forma3d.cl" class="button button-light">Escríbenos <span>↗</span></a></div>
+      <div class="faq-list">
+        <details><summary>¿Cuánto cuesta la vista previa?<span>+</span></summary><p>Nada. Subes la foto, revisas la figura en 3D y solo pagas si decides pedirla.</p></details>
+        <details><summary>¿Sirve para cualquier mascota?<span>+</span></summary><p>Perros y gatos son los que mejor resultan. Con otros animales puedes probar: la vista previa te muestra el resultado antes de comprometerte.</p></details>
+        <details><summary>¿La figura llega pintada?<span>+</span></summary><p>Llega en blanco, tal como sale de la impresora, para que la pintes o la exhibas así. En la vista previa puedes verla en blanco o con los colores de la foto como referencia.</p></details>
+        <details><summary>¿Cómo pago y cómo llega?<span>+</span></summary><p>Al reservar tu figura te escribimos al correo para confirmar el pedido, el pago y el envío según tu comuna.</p></details>
+        <details><summary>¿Qué pasa con mi foto?<span>+</span></summary><p>La foto se envía a un servicio externo de modelado 3D para crear la vista previa y no la guardamos. Si haces un pedido, conservamos el modelo y tus datos de contacto para fabricar y enviar tu figura.</p></details>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer"><a class="wordmark" href="#inicio"><span class="brand-symbol">F</span>FORMA<span class="wordmark-dot">.</span></a><span>Figuras 3D de mascotas, desde su foto.</span><a href="#inicio">VOLVER ARRIBA ↑</a><small>© 2026 FORMA · FIGURAS 3D DE MASCOTAS</small></footer>
+  <script src="script.js"></script>
+</body>
+</html>
