@@ -36,5 +36,21 @@
 .order-actions button{border-color:var(--green);color:var(--green);background:transparent}
 .order-actions button:disabled{opacity:.45;cursor:not-allowed;border-color:var(--line);color:var(--muted)}
 
+/* Visor 3D del modelo de una reserva */
+.model-dialog{width:min(900px,94vw);max-height:94vh;padding:20px;border:1px solid var(--line);background:var(--white);color:var(--ink)}
+.model-dialog::backdrop{background:#14131acc}
+.model-dialog-head{display:flex;justify-content:space-between;align-items:start;gap:14px;margin-bottom:14px}
+.model-dialog-head h2{font:700 20px var(--display);letter-spacing:-.03em;margin:4px 0 0}
+.model-dialog-stage{position:relative;height:min(60vh,540px);min-height:280px;background:#d6d8cf;background-image:linear-gradient(#526a550d 1px,transparent 1px),linear-gradient(90deg,#526a550d 1px,transparent 1px);background-size:23px 23px}
+.theme-dark .model-dialog-stage{background-color:#282630;background-image:linear-gradient(#b5a5c514 1px,transparent 1px),linear-gradient(90deg,#b5a5c514 1px,transparent 1px)}
+.model-dialog-stage model-viewer{width:100%;height:100%;--poster-color:transparent}
+.model-dialog-status{position:absolute;inset:auto 0 12px 0;text-align:center;font-size:13px;color:var(--muted);margin:0;pointer-events:none}
+.model-dialog-status.error{color:#a85f54}
+.model-dialog-actions{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:14px}
+.model-finish{display:flex;gap:6px;flex-wrap:wrap}
+.model-dialog-actions button{height:38px;border:1px solid var(--line);background:transparent;color:var(--muted);font:600 12px var(--body);padding:0 13px;cursor:pointer}
+.model-dialog-actions button[aria-pressed=true],#view-download{border-color:var(--green);color:var(--green)}
+.model-dialog-actions button:disabled{opacity:.45;cursor:not-allowed}
+
 @media(max-width:820px){.order-card{grid-template-columns:1fr 1fr}.order-actions{grid-column:1/-1;flex-direction:row}.order-actions>*{flex:1}}
 @media(max-width:480px){.order-card{grid-template-columns:1fr}.admin-login{padding:22px}}

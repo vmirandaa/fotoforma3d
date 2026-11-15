@@ -9,6 +9,18 @@ const logoutButton = document.querySelector('#admin-logout');
 const refreshButton = document.querySelector('#admin-refresh');
 const STATE_LABELS = { nueva: 'Nueva', contactada: 'Contactada', pagada: 'Pagada', enviada: 'Enviada', cancelada: 'Cancelada' };
 const SPECIES_LABELS = { perro: 'Perro', gato: 'Gato', otro: 'Otro animal' };
+const modelDialog = document.querySelector('#model-dialog');
+const modelTitle = document.querySelector('#model-dialog-title');
+const modelStatus = document.querySelector('#model-dialog-status');
+const adminViewer = document.querySelector('#admin-viewer');
+const viewWhite = document.querySelector('#view-white');
+const viewColor = document.querySelector('#view-color');
+const viewDownload = document.querySelector('#view-download');
+const modelBlobs = new Map();
+const WHITE_FINISH = [0.93, 0.92, 0.89, 1];
+let openCode = '';
+let openUrl = '';
+let openMaterials = [];
 let adminKey = '';
 try { adminKey = sessionStorage.getItem('forma-admin-key') || ''; } catch {}
 
@@ -36,6 +48,8 @@ function logout() {
   adminKey = '';
   try { sessionStorage.removeItem('forma-admin-key'); } catch {}
   ordersBox.replaceChildren();
+  modelBlobs.clear();
+  if (modelDialog.open) modelDialog.close();
   showBoard(false);
 }
 
@@ -114,29 +128,24 @@ function renderOrders(orders, states) {
         setMessage(boardMessage, error.message, true);
       }
     });
-    const download = el('button', order.hasModel ? 'Descargar modelo ↓' : 'Sin copia del modelo');
+    const view = el('button', order.hasModel ? 'Ver en 3D ◈' : 'Sin copia del modelo');
+    view.type = 'button';
+    view.disabled = !order.hasModel;
+    view.addEventListener('click', () => openModel(order));
+    const download = el('button', 'Descargar modelo ↓');
     download.type = 'button';
-    download.disabled = !order.hasModel;
+    download.hidden = !order.hasModel;
     download.addEventListener('click', async () => {
       download.disabled = true;
       try {
-        const response = await adminFetch('/api/admin/model/' + order.code);
-        if (!response.ok) throw new Error((await response.json()).error || 'No se pudo descargar el modelo.');
-        const url = URL.createObjectURL(await response.blob());
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = order.code + '.glb';
-        document.body.append(link);
-        link.click();
-        link.remove();
-        window.setTimeout(() => URL.revokeObjectURL(url), 30000);
+        await downloadModel(order.code);
       } catch (error) {
         setMessage(boardMessage, error.message, true);
       } finally {
         download.disabled = false;
       }
     });
-    actions.append(select, download);
+    actions.append(select, view, download);
     card.append(actions);
     if (order.notes) {
       const notes = field('Comentarios', document.createTextNode(order.notes));
@@ -146,6 +155,101 @@ function renderOrders(orders, states) {
     ordersBox.append(card);
   });
 }
+
+// --- Modelos: se piden con la clave del panel y quedan en memoria mientras la sesión siga abierta ---
+async function fetchModel(code) {
+  if (modelBlobs.has(code)) return modelBlobs.get(code);
+  const response = await adminFetch('/api/admin/model/' + code);
+  if (!response.ok) throw new Error((await response.json()).error || 'No se pudo obtener el modelo.');
+  const blob = await response.blob();
+  modelBlobs.set(code, blob);
+  return blob;
+}
+async function downloadModel(code) {
+  const url = URL.createObjectURL(await fetchModel(code));
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = code + '.glb';
+  document.body.append(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 30000);
+}
+function setModelStatus(text, isError) {
+  modelStatus.textContent = text || '';
+  modelStatus.className = 'model-dialog-status' + (isError ? ' error' : '');
+}
+// En blanco (como se imprime) o con los colores del modelo generado.
+function applyModelFinish(white) {
+  openMaterials.forEach((entry) => {
+    const { pbr } = entry;
+    if (pbr.baseColorTexture) pbr.baseColorTexture.setTexture(white ? null : entry.colorTexture);
+    if (pbr.metallicRoughnessTexture) pbr.metallicRoughnessTexture.setTexture(white ? null : entry.surfaceTexture);
+    pbr.setBaseColorFactor(white ? WHITE_FINISH : entry.color);
+    pbr.setMetallicFactor(white ? 0 : entry.metallic);
+    pbr.setRoughnessFactor(white ? 0.82 : entry.roughness);
+  });
+  viewWhite.setAttribute('aria-pressed', String(white));
+  viewColor.setAttribute('aria-pressed', String(!white));
+}
+// El visor conserva el último modelo aunque el siguiente falle: se oculta hasta que cargue el de esta reserva.
+function showViewer(visible) { adminViewer.style.visibility = visible ? 'visible' : 'hidden'; }
+adminViewer.addEventListener('load', () => {
+  if (!openUrl || adminViewer.src !== openUrl) return;
+  showViewer(true);
+  const materials = (adminViewer.model && adminViewer.model.materials) || [];
+  openMaterials = materials.map((material) => {
+    const pbr = material.pbrMetallicRoughness;
+    return {
+      pbr,
+      color: Array.from(pbr.baseColorFactor),
+      metallic: pbr.metallicFactor,
+      roughness: pbr.roughnessFactor,
+      colorTexture: pbr.baseColorTexture ? pbr.baseColorTexture.texture : null,
+      surfaceTexture: pbr.metallicRoughnessTexture ? pbr.metallicRoughnessTexture.texture : null
+    };
+  });
+  applyModelFinish(true);
+  viewWhite.disabled = viewColor.disabled = false;
+  setModelStatus('Arrastra para girar · rueda para acercar');
+});
+adminViewer.addEventListener('error', () => {
+  showViewer(false);
+  setModelStatus('El archivo del modelo no se pudo abrir.', true);
+});
+
+async function openModel(order) {
+  openCode = order.code;
+  openMaterials = [];
+  modelTitle.textContent = (order.petName || 'Sin nombre') + ' · ' + order.measure + ' · ' + order.code;
+  viewWhite.disabled = viewColor.disabled = true;
+  showViewer(false);
+  setModelStatus('Cargando el modelo…');
+  modelDialog.showModal();
+  try {
+    const blob = await fetchModel(order.code);
+    if (openCode !== order.code) return;
+    openUrl = URL.createObjectURL(blob);
+    adminViewer.src = openUrl;
+  } catch (error) {
+    setModelStatus(error.message, true);
+  }
+}
+modelDialog.addEventListener('close', () => {
+  showViewer(false);
+  adminViewer.removeAttribute('src');
+  if (openUrl) URL.revokeObjectURL(openUrl);
+  openUrl = '';
+  openCode = '';
+  openMaterials = [];
+});
+document.querySelector('#model-close').addEventListener('click', () => modelDialog.close());
+modelDialog.addEventListener('click', (event) => { if (event.target === modelDialog) modelDialog.close(); });
+viewWhite.addEventListener('click', () => applyModelFinish(true));
+viewColor.addEventListener('click', () => applyModelFinish(false));
+viewDownload.addEventListener('click', () => {
+  if (openCode) downloadModel(openCode).catch((error) => setModelStatus(error.message, true));
+});
 
 async function loadOrders() {
   setMessage(boardMessage, 'Cargando reservas…');

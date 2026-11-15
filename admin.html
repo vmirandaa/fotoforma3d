@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="type-scale.css">
   <link rel="stylesheet" href="admin.css">
+  <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.4.0/model-viewer.min.js"></script>
 </head>
 <body id="top" class="admin-page">
   <div class="topline"><span>FORMA · PANEL PRIVADO</span><a href="index.html">Ver el sitio <b>↗</b></a></div>
@@ -44,6 +45,24 @@
       <div class="admin-orders" id="admin-orders"></div>
     </section>
   </main>
+
+  <dialog class="model-dialog" id="model-dialog" aria-labelledby="model-dialog-title">
+    <div class="model-dialog-head">
+      <div><span class="eyebrow">Modelo de la reserva</span><h2 id="model-dialog-title"></h2></div>
+      <button class="theme-toggle" id="model-close" type="button">Cerrar ✕</button>
+    </div>
+    <div class="model-dialog-stage">
+      <model-viewer id="admin-viewer" loading="eager" camera-controls touch-action="pan-y" shadow-intensity="1.1" exposure="1" environment-image="neutral" interaction-prompt="none" alt="Modelo 3D de la reserva"></model-viewer>
+      <p class="model-dialog-status" id="model-dialog-status" role="status" aria-live="polite"></p>
+    </div>
+    <div class="model-dialog-actions">
+      <div class="model-finish" role="group" aria-label="Acabado">
+        <button type="button" id="view-white" aria-pressed="true">En blanco, como se imprime</button>
+        <button type="button" id="view-color" aria-pressed="false">Con sus colores</button>
+      </div>
+      <button type="button" id="view-download">Descargar modelo ↓</button>
+    </div>
+  </dialog>
   <script src="script.js"></script>
   <script src="admin.js"></script>
 </body>
