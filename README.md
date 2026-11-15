@@ -19,7 +19,7 @@ La vista previa usa Rodin / Hyper3D (Gen-2.5), un servicio externo con cobro por
 - `PREVIEW_TIER` define el nivel de detalle (`Gen-2.5-Low`, `Gen-2.5-Medium` o `Gen-2.5-High`).
 - `PREVIEW_LIMIT_PER_HOUR` limita cuántas puede pedir una misma IP por hora.
 
-El servidor arma el prompt para mascotas en `buildPetPrompt` (`server.mjs`); el visitante solo indica el animal y, si quiere, algún detalle. La foto no se guarda en este servidor. El visor muestra la figura en blanco, como se imprime, o con los colores de la foto.
+El servidor arma el prompt para mascotas en `buildPetPrompt` (`server.mjs`); el visitante solo indica el animal y, si quiere, algún detalle. Las fotos se guardan en una carpeta temporal del sistema y se borran a las 24 horas, o al reiniciar el servidor, si nadie reserva. El visor muestra la figura en blanco, como se imprime, o con los colores de la foto.
 
 ## Tamaños y precios
 
@@ -27,9 +27,9 @@ El servidor arma el prompt para mascotas en `buildPetPrompt` (`server.mjs`); el 
 
 ## Reservas
 
-Al reservar, el servidor agrega una línea a `pedidos/pedidos.jsonl` (código, talla, precio, nombre, correo, mascota y comentarios) y guarda el modelo como `pedidos/<código>.glb`. Esa carpeta no se sirve por la web ni entra a git. Todavía no hay pago en línea.
+Al reservar, el servidor agrega una línea a `pedidos/pedidos.jsonl` (código, talla, precio, nombre, correo, mascota y comentarios), guarda el modelo como `pedidos/<código>.glb` y copia las fotos del cliente como `pedidos/<código>-foto-N.jpg`. Esa carpeta no se sirve por la web ni entra a git. Todavía no hay pago en línea.
 
-Para revisarlas, define `ADMIN_PASSWORD` en `.env`, reinicia el servidor y abre [http://127.0.0.1:4173/admin.html](http://127.0.0.1:4173/admin.html). El panel lista las reservas, permite marcar su estado (nueva, contactada, pagada, enviada o cancelada; se guarda en `pedidos/estados.json`) y descargar el modelo de cada una. La página no está enlazada desde el sitio y sin la clave no entrega ningún dato. Si publicas el sitio, hazlo con HTTPS para que la clave no viaje en claro.
+Para revisarlas, define `ADMIN_PASSWORD` en `.env`, reinicia el servidor y abre [http://127.0.0.1:4173/admin.html](http://127.0.0.1:4173/admin.html). El panel lista las reservas, permite marcar su estado (nueva, contactada, pagada, enviada o cancelada; se guarda en `pedidos/estados.json`), ver las fotos del cliente, y ver en 3D o descargar el modelo de cada una. La página no está enlazada desde el sitio y sin la clave no entrega ningún dato. Si publicas el sitio, hazlo con HTTPS para que la clave no viaje en claro.
 
 ## Avisos por correo
 

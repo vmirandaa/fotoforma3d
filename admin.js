@@ -21,6 +21,20 @@ const WHITE_FINISH = [0.93, 0.92, 0.89, 1];
 let openCode = '';
 let openUrl = '';
 let openMaterials = [];
+const modelPhotos = document.querySelector('#model-photos');
+const photoDialog = document.querySelector('#photo-dialog');
+const photoTitle = document.querySelector('#photo-dialog-title');
+const photoImage = document.querySelector('#photo-image');
+const photoPrev = document.querySelector('#photo-prev');
+const photoNext = document.querySelector('#photo-next');
+const photoUrls = new Map();
+const ANGLE_LABELS = {
+  Front: 'Frente', 'Front-Left': 'Frente izquierda', 'Front-Right': 'Frente derecha', Back: 'Espalda',
+  'Back-Left': 'Espalda izquierda', 'Back-Right': 'Espalda derecha', Left: 'Costado izquierdo',
+  Right: 'Costado derecho', Up: 'Desde arriba', Down: 'Desde abajo'
+};
+let photoOrder = null;
+let photoIndex = 0;
 let adminKey = '';
 try { adminKey = sessionStorage.getItem('forma-admin-key') || ''; } catch {}
 
@@ -49,6 +63,9 @@ function logout() {
   try { sessionStorage.removeItem('forma-admin-key'); } catch {}
   ordersBox.replaceChildren();
   modelBlobs.clear();
+  photoUrls.forEach((pending) => pending.then((url) => URL.revokeObjectURL(url)).catch(() => {}));
+  photoUrls.clear();
+  if (photoDialog.open) photoDialog.close();
   if (modelDialog.open) modelDialog.close();
   showBoard(false);
 }
@@ -147,6 +164,19 @@ function renderOrders(orders, states) {
     });
     actions.append(select, view, download);
     card.append(actions);
+    if (order.photos && order.photos.length) {
+      const strip = document.createElement('div');
+      strip.className = 'photo-strip';
+      order.photos.forEach((photo, index) => strip.append(photoThumb(order, index)));
+      const photos = field(order.photos.length === 1 ? 'Foto del cliente' : 'Fotos del cliente', strip);
+      photos.className = 'order-notes';
+      card.append(photos);
+    }
+    if (order.petNotes) {
+      const details = field('Detalles de la mascota', document.createTextNode(order.petNotes));
+      details.className = 'order-notes';
+      card.append(details);
+    }
     if (order.notes) {
       const notes = field('Comentarios', document.createTextNode(order.notes));
       notes.className = 'order-notes';
@@ -155,6 +185,68 @@ function renderOrders(orders, states) {
     ordersBox.append(card);
   });
 }
+
+// --- Fotos del cliente: se piden con la clave del panel y se muestran como miniaturas ---
+function photoLabel(photo) { return ANGLE_LABELS[photo.label] || ''; }
+async function photoUrl(photo) {
+  if (!photoUrls.has(photo.file)) {
+    photoUrls.set(photo.file, adminFetch('/api/admin/photo/' + photo.file).then(async (response) => {
+      if (!response.ok) throw new Error('No se pudo cargar la foto.');
+      return URL.createObjectURL(await response.blob());
+    }));
+  }
+  return photoUrls.get(photo.file);
+}
+function photoThumb(order, index) {
+  const photo = order.photos[index];
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'photo-thumb';
+  const label = photoLabel(photo);
+  button.setAttribute('aria-label', 'Ver foto ' + (index + 1) + (label ? ' (' + label + ')' : '') + ' de la reserva ' + order.code);
+  const image = document.createElement('img');
+  image.alt = '';
+  button.append(image);
+  if (label) button.append(el('span', label));
+  photoUrl(photo).then((url) => { image.src = url; }).catch(() => {
+    photoUrls.delete(photo.file);
+    button.classList.add('failed');
+    button.disabled = true;
+  });
+  button.addEventListener('click', () => openPhoto(order, index));
+  return button;
+}
+function showPhoto() {
+  const photo = photoOrder.photos[photoIndex];
+  const label = photoLabel(photo);
+  photoTitle.textContent = (photoOrder.petName || 'Sin nombre') + ' · foto ' + (photoIndex + 1) + ' de ' + photoOrder.photos.length + (label ? ' · ' + label : '');
+  photoPrev.hidden = photoNext.hidden = photoOrder.photos.length < 2;
+  photoImage.removeAttribute('src');
+  const current = photo.file;
+  photoUrl(photo).then((url) => {
+    if (photoOrder && photoOrder.photos[photoIndex].file === current) photoImage.src = url;
+  }).catch(() => {});
+}
+function openPhoto(order, index) {
+  photoOrder = order;
+  photoIndex = index;
+  showPhoto();
+  if (!photoDialog.open) photoDialog.showModal();
+}
+function stepPhoto(step) {
+  if (!photoOrder) return;
+  photoIndex = (photoIndex + step + photoOrder.photos.length) % photoOrder.photos.length;
+  showPhoto();
+}
+photoPrev.addEventListener('click', () => stepPhoto(-1));
+photoNext.addEventListener('click', () => stepPhoto(1));
+photoDialog.addEventListener('keydown', (event) => {
+  if (event.key === 'ArrowLeft') stepPhoto(-1);
+  if (event.key === 'ArrowRight') stepPhoto(1);
+});
+photoDialog.addEventListener('close', () => { photoOrder = null; });
+document.querySelector('#photo-close').addEventListener('click', () => photoDialog.close());
+photoDialog.addEventListener('click', (event) => { if (event.target === photoDialog) photoDialog.close(); });
 
 // --- Modelos: se piden con la clave del panel y quedan en memoria mientras la sesión siga abierta ---
 async function fetchModel(code) {
@@ -224,6 +316,10 @@ async function openModel(order) {
   modelTitle.textContent = (order.petName || 'Sin nombre') + ' · ' + order.measure + ' · ' + order.code;
   viewWhite.disabled = viewColor.disabled = true;
   showViewer(false);
+  // Las fotos del cliente quedan junto al modelo para comparar.
+  modelPhotos.replaceChildren();
+  (order.photos || []).forEach((photo, index) => modelPhotos.append(photoThumb(order, index)));
+  modelPhotos.hidden = !modelPhotos.childElementCount;
   setModelStatus('Cargando el modelo…');
   modelDialog.showModal();
   try {

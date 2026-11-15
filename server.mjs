@@ -1,14 +1,17 @@
 import http from 'node:http';
 import path from 'node:path';
 import fs from 'node:fs';
+import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { randomUUID, createHash, timingSafeEqual } from 'node:crypto';
 import { sendOrderEmails, mailConfig } from './correo.mjs';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
+loadLocalEnv();
 const PORT = Number(process.env.PORT || 4173);
 const HOST = process.env.HOST || '127.0.0.1';
-const API_BASE = 'https://api.hyper3d.com/api/v2';
+// RODIN_API_BASE permite apuntar a un proveedor simulado para pruebas.
+const API_BASE = (process.env.RODIN_API_BASE || 'https://api.hyper3d.com/api/v2').replace(/\/+$/, '');
 const MAX_BODY = 130 * 1024 * 1024;
 // Carpeta de reservas. ORDERS_DIR permite apuntar a otra (por ejemplo, datos de demostración).
 const ORDERS_DIR = process.env.ORDERS_DIR ? path.resolve(process.env.ORDERS_DIR) : path.join(ROOT, 'pedidos');
@@ -21,6 +24,22 @@ const STATES_FILE = path.join(ORDERS_DIR, 'estados.json');
 const ORDER_STATES = ['nueva', 'contactada', 'pagada', 'enviada', 'cancelada'];
 const ORDER_CODE = /^F-[0-9A-F]{8}$/;
 const adminFailures = new Map();
+// Las fotos de una vista previa se guardan aquí de forma temporal; solo pasan a la carpeta de reservas si el cliente reserva.
+const PHOTO_TMP = path.join(os.tmpdir(), 'forma-fotos-' + PORT);
+const PHOTO_EXT = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
+const PHOTO_TYPE = { jpg: 'image/jpeg', png: 'image/png', webp: 'image/webp' };
+const PHOTO_FILE = /^F-[0-9A-F]{8}-foto-[1-5]\.(jpg|png|webp)$/;
+const PHOTO_LABELS = ['?', 'Front', 'Front-Left', 'Front-Right', 'Back', 'Back-Left', 'Back-Right', 'Left', 'Right', 'Up', 'Down'];
+const PREVIEW_TTL = 24 * 60 * 60 * 1000;
+fs.rmSync(PHOTO_TMP, { recursive: true, force: true });
+// Las vistas previas que nadie reservó se olvidan, junto con sus fotos, después de 24 horas.
+setInterval(() => {
+  for (const [id, task] of tasks) {
+    if (Date.now() - task.createdAt < PREVIEW_TTL) continue;
+    fs.rmSync(path.join(PHOTO_TMP, id), { recursive: true, force: true });
+    tasks.delete(id);
+  }
+}, 60 * 60 * 1000).unref();
 
 function loadLocalEnv() {
   const envPath = path.join(ROOT, '.env');
@@ -31,7 +50,6 @@ function loadLocalEnv() {
     process.env[match[1]] = match[2].replace(/^(['"])(.*)\1$/, '$2');
   }
 }
-loadLocalEnv();
 
 function sendJson(response, status, payload) {
   const body = JSON.stringify(payload);
@@ -134,12 +152,20 @@ async function handleGenerate(request, response) {
   const tier = previewTier();
   const species = Object.hasOwn(SPECIES, String(incoming.get('species'))) ? String(incoming.get('species')) : 'otro';
   const petName = cleanText(incoming.get('petName'), 40);
-  const prompt = buildPetPrompt(species, cleanText(incoming.get('notes'), 300));
+  const petNotes = cleanText(incoming.get('notes'), 300);
+  const prompt = buildPetPrompt(species, petNotes);
   const labels = incoming.getAll('image_label').map((value) => String(value));
+  const id = randomUUID();
+  const photoDir = path.join(PHOTO_TMP, id);
+  await fs.promises.mkdir(photoDir, { recursive: true });
+  const photos = [];
   const upstream = new FormData();
   for (let index = 0; index < images.length; index += 1) {
     const image = images[index];
     const bytes = new Uint8Array(await image.arrayBuffer());
+    const photoName = 'foto-' + (index + 1) + '.' + PHOTO_EXT[image.type];
+    await fs.promises.writeFile(path.join(photoDir, photoName), bytes);
+    photos.push({ file: photoName, label: PHOTO_LABELS.includes(labels[index]) ? labels[index] : '?' });
     upstream.append('images', new Blob([bytes], { type: image.type }), image.name || ('reference-' + (index + 1)));
     if (labels[index]) upstream.append('image_label', labels[index]);
   }
@@ -150,17 +176,24 @@ async function handleGenerate(request, response) {
   upstream.append('material', 'PBR');
   upstream.append('prompt', prompt);
 
-  const upstreamResponse = await fetch(API_BASE + '/rodin', {
-    method: 'POST',
-    headers: { authorization: 'Bearer ' + getApiKey() },
-    body: upstream,
-    signal: AbortSignal.timeout(120_000)
-  });
-  const result = await parseJson(upstreamResponse);
+  let upstreamResponse;
+  let result;
+  try {
+    upstreamResponse = await fetch(API_BASE + '/rodin', {
+      method: 'POST',
+      headers: { authorization: 'Bearer ' + getApiKey() },
+      body: upstream,
+      signal: AbortSignal.timeout(120_000)
+    });
+    result = await parseJson(upstreamResponse);
+  } catch (error) {
+    fs.rmSync(photoDir, { recursive: true, force: true });
+    throw error;
+  }
   if (!upstreamResponse.ok || result.error || !result.uuid || !result.jobs?.subscription_key) {
+    fs.rmSync(photoDir, { recursive: true, force: true });
     return sendJson(response, upstreamResponse.status || 502, { error: result.message || result.error || 'No se pudo iniciar la generación.' });
   }
-  const id = randomUUID();
   tasks.set(id, {
     providerUuid: result.uuid,
     subscriptionKey: result.jobs.subscription_key,
@@ -168,12 +201,15 @@ async function handleGenerate(request, response) {
     files: [],
     species,
     petName,
+    petNotes,
+    photos,
+    photoDir,
     createdAt: Date.now()
   });
   sendJson(response, 202, { id });
 }
 
-// Registra la reserva en pedidos/pedidos.jsonl y guarda una copia del modelo para fabricarlo.
+// Registra la reserva en pedidos/pedidos.jsonl y guarda una copia del modelo y de las fotos para fabricarla.
 async function handleOrder(request, response) {
   let body;
   try { body = JSON.parse((await readRequestBody(request, 20 * 1024)).toString('utf8')); } catch (error) {
@@ -199,6 +235,14 @@ async function handleOrder(request, response) {
       await fs.promises.writeFile(path.join(ORDERS_DIR, modelFile), Buffer.from(await modelResponse.arrayBuffer()));
     }
   } catch { modelFile = null; }
+  const photos = [];
+  for (const photo of task.photos || []) {
+    const file = code + '-' + photo.file;
+    try {
+      await fs.promises.copyFile(path.join(task.photoDir, photo.file), path.join(ORDERS_DIR, file));
+      photos.push({ file, label: photo.label });
+    } catch { /* la foto temporal ya no está: la reserva sigue sin ella */ }
+  }
   const order = {
     code,
     createdAt: new Date().toISOString(),
@@ -209,13 +253,15 @@ async function handleOrder(request, response) {
     email,
     petName: task.petName,
     species: task.species,
+    petNotes: task.petNotes || '',
     notes: cleanText(body.notes, 400),
     modelFile,
+    photos,
     providerUuid: task.providerUuid
   };
   await fs.promises.appendFile(ORDERS_FILE,JSON.stringify(order) + '\n', 'utf8');
   task.orderCode = code;
-  console.log('Nueva reserva ' + code + ' · ' + size.medida + (modelFile ? '' : ' · SIN COPIA DEL MODELO'));
+  console.log('Nueva reserva ' + code + ' · ' + size.medida + ' · ' + photos.length + ' foto(s)' + (modelFile ? '' : ' · SIN COPIA DEL MODELO'));
   sendJson(response, 201, { code });
   // El aviso por correo va después de responder: si falla, la reserva ya quedó guardada.
   sendOrderEmails(order).then((mail) => {
@@ -296,7 +342,10 @@ async function readOrders() {
       if (!ORDER_CODE.test(order.code)) continue;
       const hasModel = Boolean(order.modelFile) && fs.existsSync(path.join(ORDERS_DIR, order.code + '.glb'));
       const state = states[order.code];
-      orders.push({ ...order, hasModel, status: ORDER_STATES.includes(state?.status) ? state.status : 'nueva' });
+      const photos = (Array.isArray(order.photos) ? order.photos : [])
+        .filter((photo) => PHOTO_FILE.test(photo?.file) && photo.file.startsWith(order.code + '-'))
+        .map((photo) => ({ file: photo.file, label: PHOTO_LABELS.includes(photo.label) ? photo.label : '?' }));
+      orders.push({ ...order, photos, hasModel, status: ORDER_STATES.includes(state?.status) ? state.status : 'nueva' });
     } catch { /* línea dañada: se omite */ }
   }
   return orders.reverse();
@@ -326,6 +375,19 @@ async function handleAdmin(request, response, pathname) {
       'content-type': 'model/gltf-binary',
       'content-length': stat.size,
       'content-disposition': 'attachment; filename="' + modelMatch[1] + '.glb"',
+      'cache-control': 'private, no-store',
+      'x-content-type-options': 'nosniff'
+    });
+    return fs.createReadStream(filePath).pipe(response);
+  }
+  const photoMatch = pathname.match(/^\/api\/admin\/photo\/(F-[0-9A-F]{8}-foto-[1-5]\.(jpg|png|webp))$/);
+  if (request.method === 'GET' && photoMatch) {
+    const filePath = path.join(ORDERS_DIR, photoMatch[1]);
+    let stat;
+    try { stat = await fs.promises.stat(filePath); } catch { return sendJson(response, 404, { error: 'No se encontró la foto.' }); }
+    response.writeHead(200, {
+      'content-type': PHOTO_TYPE[photoMatch[2]],
+      'content-length': stat.size,
       'cache-control': 'private, no-store',
       'x-content-type-options': 'nosniff'
     });

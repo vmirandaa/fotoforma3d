@@ -286,7 +286,7 @@ async function runGeneration() {
     progressPercent.textContent = '100%';
     progressText.textContent = 'La vista previa está lista.';
     showState('Listo. Revisa la figura y, si te gusta, elige el tamaño.', 'success');
-    setOrderStatus('Elige un tamaño para reservar tu figura.');
+    setOrderStatus('Revisa el tamaño y completa tus datos para reservar.');
     generateButton.innerHTML = 'Probar con otra foto <span>↗</span>';
     setActiveTab('view');
   } catch (error) {

@@ -54,6 +54,7 @@
     <div class="model-dialog-stage">
       <model-viewer id="admin-viewer" loading="eager" camera-controls touch-action="pan-y" shadow-intensity="1.1" exposure="1" environment-image="neutral" interaction-prompt="none" alt="Modelo 3D de la reserva"></model-viewer>
       <p class="model-dialog-status" id="model-dialog-status" role="status" aria-live="polite"></p>
+      <div class="photo-strip model-photos" id="model-photos" aria-label="Fotos del cliente" hidden></div>
     </div>
     <div class="model-dialog-actions">
       <div class="model-finish" role="group" aria-label="Acabado">
@@ -61,6 +62,18 @@
         <button type="button" id="view-color" aria-pressed="false">Con sus colores</button>
       </div>
       <button type="button" id="view-download">Descargar modelo ↓</button>
+    </div>
+  </dialog>
+
+  <dialog class="model-dialog photo-dialog" id="photo-dialog" aria-labelledby="photo-dialog-title">
+    <div class="model-dialog-head">
+      <div><span class="eyebrow">Foto del cliente</span><h2 id="photo-dialog-title"></h2></div>
+      <button class="theme-toggle" id="photo-close" type="button">Cerrar ✕</button>
+    </div>
+    <div class="photo-dialog-stage">
+      <button class="photo-step" id="photo-prev" type="button" aria-label="Foto anterior">←</button>
+      <img id="photo-image" alt="Foto enviada por el cliente">
+      <button class="photo-step" id="photo-next" type="button" aria-label="Foto siguiente">→</button>
     </div>
   </dialog>
   <script src="script.js"></script>
