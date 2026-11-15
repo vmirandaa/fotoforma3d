@@ -10,7 +10,8 @@ const PORT = Number(process.env.PORT || 4173);
 const HOST = process.env.HOST || '127.0.0.1';
 const API_BASE = 'https://api.hyper3d.com/api/v2';
 const MAX_BODY = 130 * 1024 * 1024;
-const ORDERS_DIR = path.join(ROOT, 'pedidos');
+// Carpeta de reservas. ORDERS_DIR permite apuntar a otra (por ejemplo, datos de demostración).
+const ORDERS_DIR = process.env.ORDERS_DIR ? path.resolve(process.env.ORDERS_DIR) : path.join(ROOT, 'pedidos');
 const TIERS = ['Gen-2.5-Low', 'Gen-2.5-Medium', 'Gen-2.5-High'];
 const SPECIES = { perro: 'dog', gato: 'cat', otro: 'pet animal' };
 const tasks = new Map();
