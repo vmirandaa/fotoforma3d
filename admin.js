@@ -3,7 +3,13 @@ const keyInput = document.querySelector('#admin-key');
 const loginMessage = document.querySelector('#login-message');
 const board = document.querySelector('#admin-board');
 const boardMessage = document.querySelector('#board-message');
-const summary = document.querySelector('#admin-summary');
+const statsBox = document.querySelector('#admin-stats');
+const filtersBox = document.querySelector('#admin-filters');
+const searchInput = document.querySelector('#admin-search');
+const countLine = document.querySelector('#admin-count');
+let allOrders = [];
+let allStates = [];
+let currentFilter = 'todas';
 const ordersBox = document.querySelector('#admin-orders');
 const logoutButton = document.querySelector('#admin-logout');
 const refreshButton = document.querySelector('#admin-refresh');
@@ -84,25 +90,77 @@ function el(tag, text) {
   node.textContent = text;
   return node;
 }
-function renderOrders(orders, states) {
-  summary.replaceChildren();
-  const total = el('span', orders.length === 1 ? 'reserva' : 'reservas');
-  total.prepend(el('b', String(orders.length)));
-  summary.append(total);
-  states.forEach((state) => {
-    const count = orders.filter((order) => order.status === state).length;
-    if (!count) return;
-    const chip = el('span', STATE_LABELS[state] || state);
-    chip.prepend(el('b', String(count)));
-    summary.append(chip);
+// --- Resumen del mes, filtro por estado y buscador ---
+function plainText(value) {
+  return String(value || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+}
+function stat(label, value, note) {
+  const box = document.createElement('div');
+  box.className = 'admin-stat';
+  box.append(el('span', label), el('strong', value), el('small', note));
+  return box;
+}
+// Las ventas se cuentan por la fecha de la reserva, no por la del pago, que el panel no registra.
+function renderStats(orders) {
+  const now = new Date();
+  const inMonth = orders.filter((order) => {
+    const date = new Date(order.createdAt);
+    return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth();
   });
+  const sum = (list) => list.reduce((total, order) => total + (Number(order.price) || 0), 0);
+  const sold = inMonth.filter((order) => order.status === 'pagada' || order.status === 'enviada');
+  const pending = orders.filter((order) => order.status === 'nueva' || order.status === 'contactada');
+  const month = now.toLocaleString('es-CL', { month: 'long' });
+  const active = inMonth.filter((order) => order.status !== 'cancelada').length;
+  statsBox.replaceChildren(
+    stat('Vendido en ' + month, formatPrice(sum(sold)), sold.length + (sold.length === 1 ? ' figura pagada o enviada' : ' figuras pagadas o enviadas')),
+    stat('Por cobrar', formatPrice(sum(pending)), pending.length + (pending.length === 1 ? ' reserva nueva o contactada' : ' reservas nuevas o contactadas')),
+    stat('Reservas en ' + month, String(active), 'sin contar las canceladas')
+  );
+}
+function renderFilters(orders, states) {
+  filtersBox.replaceChildren();
+  ['todas', ...states].forEach((state) => {
+    const count = state === 'todas' ? orders.length : orders.filter((order) => order.status === state).length;
+    if (state !== 'todas' && !count && currentFilter !== state) return;
+    const button = document.createElement('button');
+    button.type = 'button';
+    if (state !== 'todas') button.dataset.status = state;
+    button.setAttribute('aria-pressed', String(currentFilter === state));
+    if (state !== 'todas') button.append(document.createElement('i'));
+    button.append(document.createTextNode(state === 'todas' ? 'Todas' : STATE_LABELS[state] || state), el('b', String(count)));
+    button.addEventListener('click', () => {
+      currentFilter = state;
+      renderOrders(allOrders, allStates);
+    });
+    filtersBox.append(button);
+  });
+}
+function matchesSearch(order, query) {
+  if (!query) return true;
+  return [order.code, order.name, order.email, order.petName, order.notes, order.petNotes].some((value) => plainText(value).includes(query));
+}
+searchInput.addEventListener('input', () => renderOrders(allOrders, allStates));
+
+function renderOrders(orders, states) {
+  allOrders = orders;
+  allStates = states;
+  renderStats(orders);
+  renderFilters(orders, states);
+  const query = plainText(searchInput.value.trim());
+  const visible = orders.filter((order) => (currentFilter === 'todas' || order.status === currentFilter) && matchesSearch(order, query));
+  countLine.textContent = visible.length === orders.length ? '' : 'Mostrando ' + visible.length + ' de ' + orders.length + ' reservas.';
 
   ordersBox.replaceChildren();
   if (!orders.length) {
     ordersBox.append(Object.assign(el('p', 'Todavía no hay reservas. Aparecerán aquí cuando alguien reserve su figura.'), { className: 'admin-empty' }));
     return;
   }
-  orders.forEach((order) => {
+  if (!visible.length) {
+    ordersBox.append(Object.assign(el('p', 'No hay reservas que coincidan con el filtro o la búsqueda.'), { className: 'admin-empty' }));
+    return;
+  }
+  visible.forEach((order) => {
     const card = document.createElement('dl');
     card.className = 'order-card';
     card.dataset.status = order.status;

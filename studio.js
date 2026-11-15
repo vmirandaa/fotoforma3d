@@ -97,7 +97,8 @@ function tailReady() {
 }
 function missingSteps() {
   const missing = [];
-  if (!selectedFiles.length) missing.push('subir al menos una foto');
+  if (preparingPhotos) missing.push('esperar a que se preparen las fotos');
+  else if (!selectedFiles.length) missing.push('subir al menos una foto');
   if (!tailChoice()) missing.push('contarnos si se ve su cola');
   else if (!tailReady()) missing.push('describir su cola');
   if (!consentInput.checked) missing.push('aceptar el envío de las fotos');
@@ -123,7 +124,41 @@ tailNotesInput.addEventListener('input', syncButtons);
 function filesReadyMessage() {
   return selectedFiles.length === 1 ? 'Foto lista.' : selectedFiles.length + ' fotos listas.';
 }
-function addFiles(files) {
+// Las fotos se achican en el navegador antes de enviarlas: suben más rápido con datos móviles
+// y quedan dentro de los límites de cualquier proveedor 3D (Hunyuan, por ejemplo, pide unos 6 MB por foto).
+const PHOTO_MAX_SIDE = 2048;
+const PHOTO_MAX_BYTES = 4 * 1024 * 1024;
+const PHOTO_MIN_SIDE = 600;
+let preparingPhotos = 0;
+async function preparePhoto(file) {
+  let bitmap;
+  try {
+    bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
+  } catch {
+    return { file, small: false };
+  }
+  const longest = Math.max(bitmap.width, bitmap.height);
+  const small = longest < PHOTO_MIN_SIDE;
+  if (file.type !== 'image/webp' && longest <= PHOTO_MAX_SIDE && file.size <= PHOTO_MAX_BYTES) {
+    bitmap.close();
+    return { file, small };
+  }
+  const scale = Math.min(1, PHOTO_MAX_SIDE / longest);
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(bitmap.width * scale);
+  canvas.height = Math.round(bitmap.height * scale);
+  const context = canvas.getContext('2d');
+  context.fillStyle = '#ffffff'; // fondo blanco para fotos recortadas con transparencia
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  bitmap.close();
+  const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.9));
+  if (!blob) return { file, small };
+  const name = file.name.replace(/\.[^.]+$/, '') + '.jpg';
+  return { file: new File([blob], name, { type: 'image/jpeg', lastModified: file.lastModified }), small };
+}
+async function addFiles(files) {
+  const accepted = [];
   for (const file of Array.from(files || [])) {
     if (!/^image\/(png|jpeg|webp)$/.test(file.type)) {
       showState('Solo se aceptan fotos JPG, PNG o WEBP.');
@@ -133,16 +168,36 @@ function addFiles(files) {
       showState('Cada foto debe pesar 25 MB o menos.');
       continue;
     }
-    if (selectedFiles.some((entry) => entry.file.name === file.name && entry.file.size === file.size)) continue;
-    if (selectedFiles.length >= 5) {
+    const key = file.name + ':' + file.size;
+    if (selectedFiles.some((entry) => entry.sourceKey === key) || accepted.some((item) => item.key === key)) continue;
+    if (selectedFiles.length + preparingPhotos + accepted.length >= 5) {
       showState('Puedes subir hasta cinco fotos de la misma mascota.');
       break;
     }
-    selectedFiles.push({ file, label: selectedFiles.length === 0 ? 'Front' : '?' });
+    accepted.push({ file, key });
   }
-  renderFiles();
-  if (selectedFiles.length) showState(filesReadyMessage(), 'success');
+  if (!accepted.length) {
+    syncButtons();
+    return;
+  }
+  preparingPhotos += accepted.length;
+  showState(accepted.length === 1 ? 'Preparando la foto…' : 'Preparando ' + accepted.length + ' fotos…');
   syncButtons();
+  const smallPhotos = [];
+  for (const item of accepted) {
+    const prepared = await preparePhoto(item.file);
+    preparingPhotos -= 1;
+    selectedFiles.push({ file: prepared.file, sourceKey: item.key, label: selectedFiles.length === 0 ? 'Front' : '?' });
+    if (prepared.small) smallPhotos.push(item.file.name);
+    renderFiles();
+    syncButtons();
+  }
+  if (preparingPhotos) return;
+  if (smallPhotos.length) {
+    showState((smallPhotos.length === 1 ? 'Una foto es muy pequeña' : smallPhotos.length + ' fotos son muy pequeñas') + ' (menos de ' + PHOTO_MIN_SIDE + ' px): la figura puede salir con menos detalle.');
+  } else {
+    showState(filesReadyMessage(), 'success');
+  }
 }
 function renderFiles() {
   selectedFiles.forEach((entry) => { if (entry.previewUrl) URL.revokeObjectURL(entry.previewUrl); });
@@ -186,7 +241,7 @@ function renderFiles() {
   });
 }
 imageInput.addEventListener('change', () => {
-  addFiles(imageInput.files);
+  addFiles(Array.from(imageInput.files));
   imageInput.value = '';
 });
 uploadZone.addEventListener('dragover', (event) => {
@@ -283,7 +338,7 @@ async function runGeneration() {
   progressBox.hidden = false;
   progressFill.style.width = '3%';
   progressPercent.textContent = '';
-  progressText.textContent = 'Enviando la foto…';
+  progressText.textContent = 'Enviando las fotos…';
   showState('');
   setModelState('PREPARANDO LA FIGURA', false);
   generateButton.innerHTML = 'Creando la vista previa… <span>◌</span>';
@@ -303,7 +358,7 @@ async function runGeneration() {
     const started = await response.json();
     if (!response.ok) throw new Error(started.error || 'No se pudo iniciar la vista previa.');
     setModelState('MODELANDO', false);
-    progressText.textContent = 'Mirando su foto…';
+    progressText.textContent = 'Mirando sus fotos…';
     const completed = await pollTask(started.id);
     if (!completed.modelReady) throw new Error('La figura se generó, pero no se pudo preparar la vista previa.');
     await waitForViewerLoad('/api/model/' + encodeURIComponent(started.id) + '?v=' + Date.now());
