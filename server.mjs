@@ -82,12 +82,30 @@ function previewAllowed(ip) {
 function cleanText(value, max) {
   return String(value ?? '').replace(/[\u0000-\u001f\u007f]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, max);
 }
-function buildPetPrompt(species, notes) {
+const TAIL_OPTIONS = ['visible', 'oculta', 'sin-cola'];
+function buildPetPrompt(species, notes, tail, tailNotes) {
   const animal = SPECIES[species] || SPECIES.otro;
-  const base = 'A single ' + animal + ', full body, faithful to the reference photo: same pose, ears, tail, snout and body proportions. '
-    + 'Solid collectible figurine suitable for 3D printing, sturdy shapes, fur simplified into clean sculpted volumes, no thin fragile parts. '
-    + 'Only the animal: no background, no floor, no people, no leash or other objects.';
-  return (notes ? base + ' Owner notes: ' + notes : base).slice(0, 900);
+  const parts = [
+    'A single ' + animal + ', full body, faithful to the reference photos: same pose, ears, tail, snout and body proportions.',
+    'Solid collectible figurine suitable for 3D printing, sturdy shapes, fur simplified into clean sculpted volumes, no thin fragile parts.',
+    'Keep ears, tongue and tail thick and attached to the body; whiskers only as shallow relief, never as separate strands.',
+    'Only the animal: no background, no floor, no people, no leash or other objects.'
+  ];
+  // La cola es lo que más falla cuando no aparece en las fotos.
+  if (tail === 'oculta') {
+    parts.push(tailNotes
+      ? 'The tail is not visible in the photos. Owner description of the tail: ' + tailNotes
+      : 'The tail is not visible in the photos: give it a natural tail for this animal, resting against the body.');
+  }
+  if (tail === 'sin-cola') parts.push('The animal has no tail or only a very short docked tail.');
+  if (notes) parts.push('Owner notes: ' + notes);
+  return parts.join(' ').slice(0, 900);
+}
+// Resumen en español de la cola para el panel de reservas.
+function tailSummary(tail, tailNotes) {
+  if (tail === 'oculta') return 'Cola (no se ve en las fotos): ' + (tailNotes || 'sin descripción');
+  if (tail === 'sin-cola') return 'No tiene cola o es muy corta';
+  return '';
 }
 function loadCatalog() {
   return JSON.parse(fs.readFileSync(path.join(ROOT, 'catalogo.json'), 'utf8'));
@@ -153,7 +171,10 @@ async function handleGenerate(request, response) {
   const species = Object.hasOwn(SPECIES, String(incoming.get('species'))) ? String(incoming.get('species')) : 'otro';
   const petName = cleanText(incoming.get('petName'), 40);
   const petNotes = cleanText(incoming.get('notes'), 300);
-  const prompt = buildPetPrompt(species, petNotes);
+  const tail = TAIL_OPTIONS.includes(String(incoming.get('tail'))) ? String(incoming.get('tail')) : '';
+  const tailNotes = tail === 'oculta' ? cleanText(incoming.get('tailNotes'), 120) : '';
+  const prompt = buildPetPrompt(species, petNotes, tail, tailNotes);
+  const petDetails = [tailSummary(tail, tailNotes), petNotes].filter(Boolean).join('. ');
   const labels = incoming.getAll('image_label').map((value) => String(value));
   const id = randomUUID();
   const photoDir = path.join(PHOTO_TMP, id);
@@ -201,7 +222,7 @@ async function handleGenerate(request, response) {
     files: [],
     species,
     petName,
-    petNotes,
+    petNotes: petDetails,
     photos,
     photoDir,
     createdAt: Date.now()

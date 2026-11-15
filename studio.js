@@ -9,6 +9,9 @@ const fileList = document.querySelector('#file-list');
 const moreAngles = document.querySelector('#more-angles');
 const petNameInput = document.querySelector('#pet-name');
 const consentInput = document.querySelector('#consent');
+const tailDescribe = document.querySelector('#tail-describe');
+const tailNotesInput = document.querySelector('#tail-notes');
+const generateHint = document.querySelector('#generate-hint');
 const generateButton = document.querySelector('#generate-model');
 const stateBox = document.querySelector('#generation-state');
 const progressBox = document.querySelector('#generation-progress');
@@ -84,12 +87,37 @@ function selectedSize() {
   const checked = sizeOptions.querySelector('input:checked');
   return checked ? checked.value : '';
 }
+// La cola es lo que más falla cuando no aparece en las fotos, así que se pregunta siempre.
+function tailChoice() {
+  const checked = form.querySelector('input[name="tail"]:checked');
+  return checked ? checked.value : '';
+}
+function tailReady() {
+  return tailChoice() !== '' && (tailChoice() !== 'oculta' || tailNotesInput.value.trim().length >= 3);
+}
+function missingSteps() {
+  const missing = [];
+  if (!selectedFiles.length) missing.push('subir al menos una foto');
+  if (!tailChoice()) missing.push('contarnos si se ve su cola');
+  else if (!tailReady()) missing.push('describir su cola');
+  if (!consentInput.checked) missing.push('aceptar el envío de las fotos');
+  return missing;
+}
 function syncButtons() {
-  generateButton.disabled = generationBusy || selectedFiles.length === 0 || !consentInput.checked || !serviceReady;
+  const missing = missingSteps();
+  generateButton.disabled = generationBusy || missing.length > 0 || !serviceReady;
+  const list = missing.length > 1 ? missing.slice(0, -1).join(', ') + ' y ' + missing[missing.length - 1] : missing[0];
+  generateHint.textContent = serviceReady && !generationBusy && missing.length ? 'Falta ' + list + '.' : '';
   orderSubmit.disabled = generationBusy || orderBusy || orderSent || !hasGeneratedModel || !selectedSize();
   finishWhite.disabled = finishColor.disabled = !hasGeneratedModel;
 }
 consentInput.addEventListener('change', syncButtons);
+form.querySelectorAll('input[name="tail"]').forEach((radio) => radio.addEventListener('change', () => {
+  tailDescribe.hidden = tailChoice() !== 'oculta';
+  if (!tailDescribe.hidden) tailNotesInput.focus();
+  syncButtons();
+}));
+tailNotesInput.addEventListener('input', syncButtons);
 
 // --- Fotos ---
 function filesReadyMessage() {
@@ -121,6 +149,10 @@ function renderFiles() {
   fileList.replaceChildren();
   fileList.classList.toggle('single', selectedFiles.length < 2);
   moreAngles.hidden = selectedFiles.length === 0;
+  moreAngles.classList.toggle('nudge', selectedFiles.length === 1);
+  if (selectedFiles.length === 1) moreAngles.textContent = 'Con una sola foto, el modelo inventa lo que no se ve. Si puedes, suma una de costado o donde se vea la cola.';
+  else if (selectedFiles.length >= 5) moreAngles.textContent = 'Llegaste al máximo de cinco fotos. Indica desde dónde está tomada cada una.';
+  else moreAngles.textContent = 'Indica desde dónde está tomada cada foto: ayuda a armar bien el volumen.';
   selectedFiles.forEach((entry, index) => {
     const card = document.createElement('div');
     card.className = 'file-thumb';
@@ -265,6 +297,8 @@ async function runGeneration() {
     payload.append('species', document.querySelector('#pet-species').value);
     payload.append('petName', petName);
     payload.append('notes', document.querySelector('#pet-notes').value.trim());
+    payload.append('tail', tailChoice());
+    payload.append('tailNotes', tailChoice() === 'oculta' ? tailNotesInput.value.trim() : '');
     const response = await fetch('/api/generate', { method: 'POST', body: payload });
     const started = await response.json();
     if (!response.ok) throw new Error(started.error || 'No se pudo iniciar la vista previa.');
@@ -287,7 +321,7 @@ async function runGeneration() {
     progressText.textContent = 'La vista previa está lista.';
     showState('Listo. Revisa la figura y, si te gusta, elige el tamaño.', 'success');
     setOrderStatus('Revisa el tamaño y completa tus datos para reservar.');
-    generateButton.innerHTML = 'Probar con otra foto <span>↗</span>';
+    generateButton.innerHTML = 'Probar con otras fotos <span>↗</span>';
     setActiveTab('view');
   } catch (error) {
     setModelState(hasGeneratedModel ? 'VISTA PREVIA ANTERIOR' : 'SIN FIGURA TODAVÍA', hasGeneratedModel);
@@ -301,7 +335,7 @@ async function runGeneration() {
 }
 form.addEventListener('submit', (event) => {
   event.preventDefault();
-  if (!selectedFiles.length || !consentInput.checked) return;
+  if (missingSteps().length) return;
   runGeneration();
 });
 

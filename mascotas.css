@@ -81,3 +81,32 @@
 
 @media(max-width:900px){.size-grid{grid-template-columns:1fr 1fr}}
 @media(max-width:650px){.size-grid{gap:10px}.size-card{padding:18px 15px}.size-card .size-measure{font-size:27px}.size-card .size-price{font-size:18px}.hero{padding-bottom:64px}}
+
+/* Creador: guía de fotos y pregunta por la cola */
+.prepare-panel .shot-guide,.prepare-panel .shot-tip,.prepare-panel .generate-hint{grid-column:1/-1}
+.shot-guide{list-style:none;margin:0 0 12px;padding:0;display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.shot-guide li{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);background:var(--paper);padding:11px 12px}
+.shot-guide b{flex:0 0 auto;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:var(--green);color:#fff;font:700 12px var(--display)}
+.shot-guide strong{display:block;font:700 13px var(--display)}
+.shot-guide small{display:block;font-size:11px;line-height:1.5;color:var(--muted);margin-top:2px}
+.shot-tip{display:flex;gap:8px;align-items:flex-start;font-size:12px;line-height:1.5;color:var(--muted);margin:0 0 14px}
+.shot-tip span{flex:0 0 auto;width:18px;height:18px;border-radius:50%;display:grid;place-items:center;background:var(--orange);color:#fff;font:700 11px var(--display)}
+.more-angles.nudge{color:#9a6a3e;font-weight:600}
+.theme-dark .more-angles.nudge{color:#d9b48f}
+.file-thumb select{font-size:10px;height:24px}
+.tail-field{border:0;padding:0;min-width:0}
+.tail-field legend{font-size:12px;font-weight:700;padding:0;margin-bottom:8px}
+.choice-row{display:flex;gap:7px;flex-wrap:wrap}
+.choice{position:relative;cursor:pointer}
+.choice input{position:absolute;opacity:0;inset:0;cursor:pointer;margin:0}
+.choice span{display:block;border:1px solid var(--line);padding:9px 13px;font-size:13px;background:#fcfbf7}
+.choice input:checked+span{border-color:var(--green);color:var(--green);background:#526a5510;font-weight:600}
+.choice input:focus-visible+span{outline:2px solid var(--green);outline-offset:2px}
+.theme-dark .choice span{background:#1a1820;border-color:#514b59}
+.theme-dark .choice input:checked+span{background:#a18bc51a;border-color:#a18bc5;color:#d2c3ee}
+.tail-describe{margin-top:10px}
+.tail-describe label{display:block;font-size:12px;font-weight:700;margin-bottom:6px}
+.tail-describe small{display:block;margin-top:5px;font-size:11px;color:var(--muted)}
+.generate-hint{min-height:16px;margin:8px 0 0;font-size:12px;color:var(--muted)}
+.generate-hint:empty{display:none}
+@media(max-width:700px){.shot-guide{grid-template-columns:1fr}}
