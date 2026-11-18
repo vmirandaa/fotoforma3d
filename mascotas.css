@@ -4,9 +4,9 @@
 .pet-art{position:absolute;inset:6% 8% 0;width:84%;height:94%}
 .pet-photo{background:linear-gradient(170deg,#cfd9c6 0 62%,#a9b79d 62%)}
 /* Los colores viajan como variables porque <use> no hereda selectores de ancestros. */
-.pet-fill{fill:var(--pet-fill)}.pet-body{stroke:var(--pet-fill)}.pet-light{fill:var(--pet-light)}.pet-dark{fill:var(--pet-dark)}.pet-base{fill:var(--pet-base)}
-.pet-photo{--pet-fill:#c98f5e;--pet-light:#f0dcc2;--pet-dark:#3a2d24;--pet-base:#00000018}
-.pet-figure{--pet-fill:#f4f2ea;--pet-light:#e4e2d8;--pet-dark:#c9c8bd;--pet-base:#dcdace}
+.pet-fill{fill:var(--pet-fill)}.pet-body{stroke:var(--pet-fill)}.pet-light{fill:var(--pet-light)}.pet-dark{fill:var(--pet-dark)}.pet-base{fill:var(--pet-base)}.pet-tongue{fill:var(--pet-tongue,var(--pet-light))}
+.pet-photo{--pet-fill:#d08a4e;--pet-light:#fbf3e6;--pet-tongue:#e2817c;--pet-dark:#3a2d24;--pet-base:#00000018}
+.pet-figure{--pet-fill:#f4f2ea;--pet-light:#e4e2d8;--pet-tongue:#dcdacf;--pet-dark:#c9c8bd;--pet-base:#dcdace}
 .pet-figure .pet-art{filter:drop-shadow(3px 6px 4px #3f514440)}
 .theme-dark .pet-photo{background:linear-gradient(170deg,#57675a 0 62%,#414f44 62%)}
 .hero{padding-bottom:72px}
