@@ -81,3 +81,51 @@ nav.querySelectorAll('a').forEach((link) => link.addEventListener('click', () =>
   nav.classList.remove('open');
   menuButton.setAttribute('aria-expanded', 'false');
 }));
+
+// Figura 3D de muestra en la portada. Si existe figura-muestra.glb se carga el visor y la figura
+// reemplaza a la ilustración; si no existe, la portada queda con la ilustración tal como está.
+const heroModelSlot = document.querySelector('#hero-model');
+if (heroModelSlot) {
+  const HERO_MODEL = 'figura-muestra.glb';
+  const VIEWER_SCRIPT = 'https://ajax.googleapis.com/ajax/libs/model-viewer/4.4.0/model-viewer.min.js';
+  const whiteFinish = (viewer) => {
+    ((viewer.model && viewer.model.materials) || []).forEach((material) => {
+      const pbr = material.pbrMetallicRoughness;
+      if (pbr.baseColorTexture) pbr.baseColorTexture.setTexture(null);
+      if (pbr.metallicRoughnessTexture) pbr.metallicRoughnessTexture.setTexture(null);
+      pbr.setBaseColorFactor([0.93, 0.92, 0.89, 1]);
+      pbr.setMetallicFactor(0);
+      pbr.setRoughnessFactor(0.82);
+    });
+  };
+  fetch(HERO_MODEL, { method: 'HEAD' }).then((response) => {
+    if (!response.ok) return;
+    const script = document.createElement('script');
+    script.type = 'module';
+    script.src = VIEWER_SCRIPT;
+    document.head.append(script);
+    const viewer = document.createElement('model-viewer');
+    viewer.setAttribute('src', HERO_MODEL);
+    viewer.setAttribute('alt', 'Figura 3D de muestra, en blanco como se imprime');
+    viewer.setAttribute('loading', 'eager');
+    viewer.setAttribute('camera-controls', '');
+    viewer.setAttribute('disable-zoom', '');
+    viewer.setAttribute('disable-pan', '');
+    viewer.setAttribute('touch-action', 'pan-y');
+    viewer.setAttribute('interaction-prompt', 'none');
+    viewer.setAttribute('shadow-intensity', '1');
+    viewer.setAttribute('environment-image', 'neutral');
+    viewer.setAttribute('camera-orbit', '25deg 78deg auto');
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      viewer.setAttribute('auto-rotate', '');
+      viewer.setAttribute('rotation-per-second', '18deg');
+    }
+    viewer.addEventListener('load', () => {
+      whiteFinish(viewer);
+      document.querySelector('.hero-visual').classList.add('con-figura');
+      const caption = document.querySelector('#hero-caption');
+      if (caption) caption.innerHTML = 'Figura de muestra, en blanco<br>como llega. Arrástrala para girarla.';
+    }, { once: true });
+    heroModelSlot.append(viewer);
+  }).catch(() => {});
+}

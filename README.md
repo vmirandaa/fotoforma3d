@@ -21,6 +21,10 @@ La vista previa usa Rodin / Hyper3D (Gen-2.5), un servicio externo con cobro por
 
 El servidor arma el prompt para mascotas en `buildPetPrompt` (`server.mjs`); el visitante solo indica el animal y, si quiere, algún detalle. Las fotos se guardan en una carpeta temporal del sistema y se borran a las 24 horas, o al reiniciar el servidor, si nadie reserva. El visor muestra la figura en blanco, como se imprime, o con los colores de la foto.
 
+## Figura de muestra en la portada
+
+Si existe el archivo `figura-muestra.glb` en esta carpeta, la portada lo muestra girando en blanco, como se imprime, en lugar de la ilustración. Si no existe, se ve la ilustración. Conviene un modelo liviano (idealmente menos de 5 MB) y con derecho a usarlo comercialmente.
+
 ## Tamaños y precios
 
 `catalogo.json` es la única fuente de tallas, medidas y precios: la leen la portada, el creador y el servidor. Cámbialos ahí.

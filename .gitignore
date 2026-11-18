@@ -4,3 +4,4 @@ pedidos/
 *.glb
 *.stl
 fotos-prueba/
+!figura-muestra.glb
