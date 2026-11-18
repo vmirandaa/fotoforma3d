@@ -105,3 +105,4 @@ h1 em, h2 em { font-family: var(--heading); font-style: italic; font-weight: 400
   .hero-visual.con-figura .transform-arrow { display: none; }
 }
 .theme-dark .hero-model { background: #3d4c40; }
+.topline { justify-content: center; }
