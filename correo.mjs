@@ -64,7 +64,7 @@ export function buildOrderEmails(order, config) {
     ['Precio', formatPrice(order.price) + ' (el envío se cotiza según tu comuna)']
   ];
   const customerTitle = 'Hola ' + order.name + ', recibimos tu reserva';
-  const customerClosing = 'Pronto te escribiremos para confirmar el pago y el envío. Si tienes alguna duda, responde este correo.';
+  const customerClosing = 'Pronto te escribiremos para confirmar el pago y el envío. Puedes ver en qué etapa va tu figura en la sección "Mi pedido" del sitio, con este código y tu correo. Si tienes alguna duda, responde este correo.';
 
   return [
     {

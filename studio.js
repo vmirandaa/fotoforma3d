@@ -438,6 +438,10 @@ orderForm.addEventListener('submit', async (event) => {
     orderSent = true;
     orderSubmit.innerHTML = 'Reserva enviada <span>✓</span>';
     setOrderStatus('Reserva ' + result.code + ' recibida. Te escribiremos a ' + email + ' para confirmar el pago y el envío.', 'success');
+    const trackLink = document.createElement('a');
+    trackLink.href = 'ingresar.html?codigo=' + encodeURIComponent(result.code);
+    trackLink.textContent = 'Sigue tu pedido aquí';
+    orderStatus.append(' ', trackLink, '.');
   } catch (error) {
     setOrderStatus(error.message || 'No se pudo registrar la reserva.', 'error');
   } finally {

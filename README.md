@@ -33,7 +33,11 @@ Si existe el archivo `figura-muestra.glb` en esta carpeta, la portada lo muestra
 
 Al reservar, el servidor agrega una línea a `pedidos/pedidos.jsonl` (código, talla, precio, nombre, correo, mascota y comentarios), guarda el modelo como `pedidos/<código>.glb` y copia las fotos del cliente como `pedidos/<código>-foto-N.jpg`. Esa carpeta no se sirve por la web ni entra a git. Todavía no hay pago en línea.
 
-Para revisarlas, define `ADMIN_PASSWORD` en `.env`, reinicia el servidor y abre [http://127.0.0.1:4173/admin.html](http://127.0.0.1:4173/admin.html). El panel lista las reservas, permite marcar su estado (nueva, contactada, pagada, enviada o cancelada; se guarda en `pedidos/estados.json`), ver las fotos del cliente, y ver en 3D o descargar el modelo de cada una. La página no está enlazada desde el sitio y sin la clave no entrega ningún dato. Si publicas el sitio, hazlo con HTTPS para que la clave no viaje en claro.
+Para revisarlas, define `ADMIN_USER` y `ADMIN_PASSWORD` en `.env`, reinicia el servidor y entra en [http://127.0.0.1:4173/ingresar.html#admin](http://127.0.0.1:4173/ingresar.html#admin). Al ingresar se abre una sesión de 12 horas, guardada en una cookie que el navegador no deja leer a la página, y se pasa al panel (`admin.html`). El panel lista las reservas, permite marcar su estado (nueva, contactada, pagada, enviada o cancelada; se guarda en `pedidos/estados.json`), ver las fotos del cliente, y ver en 3D o descargar el modelo de cada una. Al publicar el sitio con HTTPS, define `COOKIE_SECURE=true` para que la sesión solo viaje cifrada.
+
+## Mi pedido
+
+En `ingresar.html` el cliente escribe el código de su reserva y el correo con que la hizo, y ve en qué etapa está (recibida, contactada, pagada o enviada), los datos de su figura y, si la pide, la figura en 3D. Tras 20 intentos fallidos en 15 minutos desde una misma conexión, la búsqueda se bloquea un rato.
 
 ## Avisos por correo
 

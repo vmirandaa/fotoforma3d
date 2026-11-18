@@ -3,7 +3,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 import os from 'node:os';
 import { fileURLToPath } from 'node:url';
-import { randomUUID, createHash, timingSafeEqual } from 'node:crypto';
+import { randomUUID, randomBytes, createHash, timingSafeEqual } from 'node:crypto';
 import { sendOrderEmails, mailConfig } from './correo.mjs';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
@@ -339,14 +339,122 @@ async function handleModel(id, response) {
   response.end();
 }
 
-// --- Panel privado de reservas (admin.html). Se activa definiendo ADMIN_PASSWORD en .env. ---
-function adminKeyMatches(request) {
-  const expected = process.env.ADMIN_PASSWORD?.trim();
-  if (!expected) return null;
-  let given = String(request.headers.authorization || '').replace(/^Bearer\s+/i, '');
-  try { given = decodeURIComponent(given); } catch { return false; }
-  const digest = (value) => createHash('sha256').update(value).digest();
+// --- Cuenta de administrador: usuario y clave en .env (ADMIN_USER y ADMIN_PASSWORD).
+// Al ingresar se crea una sesión guardada en una cookie HttpOnly; el panel ya no envía la clave en cada pedido.
+const SESSION_COOKIE = 'forma_admin';
+const SESSION_TTL = 12 * 60 * 60 * 1000;
+const adminSessions = new Map();
+const trackFailures = new Map();
+function adminConfigured() {
+  return Boolean(process.env.ADMIN_USER?.trim() && process.env.ADMIN_PASSWORD?.trim());
+}
+function safeEqual(given, expected) {
+  const digest = (value) => createHash('sha256').update(String(value)).digest();
   return timingSafeEqual(digest(given), digest(expected));
+}
+function readCookie(request, name) {
+  for (const part of String(request.headers.cookie || '').split(';')) {
+    const index = part.indexOf('=');
+    if (index > 0 && part.slice(0, index).trim() === name) return part.slice(index + 1).trim();
+  }
+  return '';
+}
+function adminSession(request) {
+  const token = readCookie(request, SESSION_COOKIE);
+  const session = token && adminSessions.get(token);
+  if (!session) return null;
+  if (session.expires < Date.now()) {
+    adminSessions.delete(token);
+    return null;
+  }
+  return token;
+}
+// Con COOKIE_SECURE=true la cookie solo viaja por HTTPS: actívalo al publicar el sitio.
+function sessionCookie(token, maxAgeSeconds) {
+  const secure = process.env.COOKIE_SECURE === 'true' ? '; Secure' : '';
+  return SESSION_COOKIE + '=' + token + '; HttpOnly; SameSite=Strict; Path=/; Max-Age=' + maxAgeSeconds + secure;
+}
+function tooManyFailures(map, ip, limit) {
+  const since = Date.now() - 15 * 60 * 1000;
+  const recent = (map.get(ip) || []).filter((time) => time > since);
+  map.set(ip, recent);
+  return recent.length >= limit;
+}
+function noteFailure(map, ip) {
+  const list = map.get(ip) || [];
+  list.push(Date.now());
+  map.set(ip, list);
+}
+async function readSmallJson(request) {
+  try { return JSON.parse((await readRequestBody(request, 2 * 1024)).toString('utf8')); } catch { return null; }
+}
+async function handleAdminLogin(request, response) {
+  const ip = request.socket.remoteAddress || 'desconocida';
+  if (!adminConfigured()) return sendJson(response, 503, { error: 'El acceso de administrador está desactivado. Define ADMIN_USER y ADMIN_PASSWORD en el archivo .env y reinicia el servidor.' });
+  if (tooManyFailures(adminFailures, ip, 10)) return sendJson(response, 429, { error: 'Demasiados intentos. Espera unos minutos.' });
+  const body = await readSmallJson(request);
+  const userOk = safeEqual(String(body?.user ?? '').trim(), process.env.ADMIN_USER.trim());
+  const passwordOk = safeEqual(String(body?.password ?? ''), process.env.ADMIN_PASSWORD.trim());
+  if (!userOk || !passwordOk) {
+    noteFailure(adminFailures, ip);
+    return sendJson(response, 401, { error: 'Usuario o clave incorrectos.' });
+  }
+  for (const [token, session] of adminSessions) if (session.expires < Date.now()) adminSessions.delete(token);
+  const token = randomBytes(32).toString('hex');
+  adminSessions.set(token, { expires: Date.now() + SESSION_TTL });
+  response.setHeader('set-cookie', sessionCookie(token, SESSION_TTL / 1000));
+  sendJson(response, 200, { ok: true });
+}
+function handleAdminLogout(request, response) {
+  const token = adminSession(request);
+  if (token) adminSessions.delete(token);
+  response.setHeader('set-cookie', sessionCookie('', 0));
+  sendJson(response, 200, { ok: true });
+}
+
+// --- Seguimiento para clientes: con el código de la reserva y el correo con que se hizo ---
+async function findTrackedOrder(request, response) {
+  const ip = request.socket.remoteAddress || 'desconocida';
+  if (tooManyFailures(trackFailures, ip, 20)) {
+    sendJson(response, 429, { error: 'Demasiados intentos. Espera unos minutos.' });
+    return null;
+  }
+  const body = await readSmallJson(request);
+  let code = String(body?.code ?? '').trim().toUpperCase();
+  if (/^[0-9A-F]{8}$/.test(code)) code = 'F-' + code;
+  const email = String(body?.email ?? '').trim().toLowerCase();
+  const order = ORDER_CODE.test(code) && email ? (await readOrders()).find((item) => item.code === code) : null;
+  if (!order || String(order.email).trim().toLowerCase() !== email) {
+    noteFailure(trackFailures, ip);
+    sendJson(response, 404, { error: 'No encontramos una reserva con ese código y correo. Revisa que estén escritos igual que en el correo de confirmación.' });
+    return null;
+  }
+  return order;
+}
+async function handleTracking(request, response) {
+  const order = await findTrackedOrder(request, response);
+  if (!order) return;
+  const states = await readJsonFile(STATES_FILE, {});
+  sendJson(response, 200, {
+    code: order.code,
+    createdAt: order.createdAt,
+    status: order.status,
+    statusUpdatedAt: states[order.code]?.updatedAt || null,
+    measure: order.measure,
+    price: order.price,
+    petName: order.petName || '',
+    species: order.species || '',
+    hasModel: order.hasModel
+  });
+}
+async function handleTrackingModel(request, response) {
+  const order = await findTrackedOrder(request, response);
+  if (!order) return;
+  if (!order.hasModel) return sendJson(response, 404, { error: 'Esta reserva no tiene una copia del modelo.' });
+  const filePath = path.join(ORDERS_DIR, order.code + '.glb');
+  const stat = await fs.promises.stat(filePath);
+  response.writeHead(200, { 'content-type': 'model/gltf-binary', 'content-length': stat.size, 'cache-control': 'private, no-store', 'x-content-type-options': 'nosniff' });
+  fs.createReadStream(filePath).pipe(response);
 }
 async function readJsonFile(filePath, fallback) {
   try { return JSON.parse(await fs.promises.readFile(filePath, 'utf8')); } catch { return fallback; }
@@ -372,17 +480,9 @@ async function readOrders() {
   return orders.reverse();
 }
 async function handleAdmin(request, response, pathname) {
-  const ip = request.socket.remoteAddress || 'desconocida';
-  const since = Date.now() - 15 * 60 * 1000;
-  const failures = (adminFailures.get(ip) || []).filter((time) => time > since);
-  if (failures.length >= 10) return sendJson(response, 429, { error: 'Demasiados intentos. Espera unos minutos.' });
-  const authorized = adminKeyMatches(request);
-  if (authorized === null) return sendJson(response, 503, { error: 'El panel está desactivado. Define ADMIN_PASSWORD en el archivo .env y reinicia el servidor.' });
-  if (!authorized) {
-    failures.push(Date.now());
-    adminFailures.set(ip, failures);
-    return sendJson(response, 401, { error: 'Clave incorrecta.' });
-  }
+  if (!adminConfigured()) return sendJson(response, 503, { error: 'El acceso de administrador está desactivado. Define ADMIN_USER y ADMIN_PASSWORD en el archivo .env y reinicia el servidor.' });
+  if (!adminSession(request)) return sendJson(response, 401, { error: 'Tu sesión de administrador no está activa. Ingresa de nuevo.' });
+  if (request.method === 'GET' && pathname === '/api/admin/session') return sendJson(response, 200, { ok: true });
 
   if (request.method === 'GET' && pathname === '/api/admin/orders') {
     return sendJson(response, 200, { orders: await readOrders(), states: ORDER_STATES });
@@ -470,6 +570,10 @@ const server = http.createServer(async (request, response) => {
     }
     if (request.method === 'POST' && parsed.pathname === '/api/generate') return await handleGenerate(request, response);
     if (request.method === 'POST' && parsed.pathname === '/api/order') return await handleOrder(request, response);
+    if (request.method === 'POST' && parsed.pathname === '/api/seguimiento') return await handleTracking(request, response);
+    if (request.method === 'POST' && parsed.pathname === '/api/seguimiento/modelo') return await handleTrackingModel(request, response);
+    if (request.method === 'POST' && parsed.pathname === '/api/admin/login') return await handleAdminLogin(request, response);
+    if (request.method === 'POST' && parsed.pathname === '/api/admin/logout') return handleAdminLogout(request, response);
     if (parsed.pathname.startsWith('/api/admin/')) return await handleAdmin(request, response, parsed.pathname);
     const statusMatch = parsed.pathname.match(/^\/api\/status\/([0-9a-f-]{36})$/i);
     if (request.method === 'GET' && statusMatch) return await handleStatus(statusMatch[1], response);

@@ -1,5 +1,4 @@
-const loginForm = document.querySelector('#admin-login');
-const keyInput = document.querySelector('#admin-key');
+const loginBox = document.querySelector('#admin-login');
 const loginMessage = document.querySelector('#login-message');
 const board = document.querySelector('#admin-board');
 const boardMessage = document.querySelector('#board-message');
@@ -41,8 +40,6 @@ const ANGLE_LABELS = {
 };
 let photoOrder = null;
 let photoIndex = 0;
-let adminKey = '';
-try { adminKey = sessionStorage.getItem('forma-admin-key') || ''; } catch {}
 
 function setMessage(box, text, isError) {
   box.textContent = text || '';
@@ -51,22 +48,21 @@ function setMessage(box, text, isError) {
 async function adminFetch(url, options = {}) {
   const response = await fetch(url, {
     ...options,
-    headers: { ...(options.headers || {}), authorization: 'Bearer ' + encodeURIComponent(adminKey) }
+    credentials: 'same-origin'
   });
   if (response.status === 401) {
-    logout();
-    throw new Error('Clave incorrecta.');
+    clearBoard();
+    throw new Error('Tu sesión de administrador no está activa. Ingresa de nuevo.');
   }
   return response;
 }
 function showBoard(visible) {
   board.hidden = !visible;
-  loginForm.hidden = visible;
+  loginBox.hidden = visible;
   logoutButton.hidden = !visible;
 }
-function logout() {
-  adminKey = '';
-  try { sessionStorage.removeItem('forma-admin-key'); } catch {}
+// Limpia lo cargado en pantalla (reservas, fotos y modelos) cuando la sesión termina.
+function clearBoard() {
   ordersBox.replaceChildren();
   modelBlobs.clear();
   photoUrls.forEach((pending) => pending.then((url) => URL.revokeObjectURL(url)).catch(() => {}));
@@ -417,19 +413,17 @@ async function loadOrders() {
 async function enter() {
   try {
     await loadOrders();
-    try { sessionStorage.setItem('forma-admin-key', adminKey); } catch {}
     setMessage(loginMessage, '');
   } catch (error) {
     showBoard(false);
     setMessage(loginMessage, error.message, true);
   }
 }
-loginForm.addEventListener('submit', (event) => {
-  event.preventDefault();
-  adminKey = keyInput.value;
-  keyInput.value = '';
-  enter();
-});
+async function logout() {
+  try { await fetch('/api/admin/logout', { method: 'POST', credentials: 'same-origin' }); } catch {}
+  clearBoard();
+  window.location.href = 'ingresar.html#admin';
+}
 logoutButton.addEventListener('click', logout);
 refreshButton.addEventListener('click', () => loadOrders().catch((error) => setMessage(boardMessage, error.message, true)));
-if (adminKey) enter();
+enter();
