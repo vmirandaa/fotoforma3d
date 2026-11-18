@@ -93,7 +93,7 @@ if (heroModelSlot) {
       const pbr = material.pbrMetallicRoughness;
       if (pbr.baseColorTexture) pbr.baseColorTexture.setTexture(null);
       if (pbr.metallicRoughnessTexture) pbr.metallicRoughnessTexture.setTexture(null);
-      pbr.setBaseColorFactor([0.93, 0.92, 0.89, 1]);
+      pbr.setBaseColorFactor([0.88, 0.87, 0.83, 1]);
       pbr.setMetallicFactor(0);
       pbr.setRoughnessFactor(0.82);
     });
@@ -115,6 +115,9 @@ if (heroModelSlot) {
     viewer.setAttribute('interaction-prompt', 'none');
     viewer.setAttribute('shadow-intensity', '1');
     viewer.setAttribute('environment-image', 'neutral');
+    viewer.setAttribute('exposure', '0.9');
+    viewer.setAttribute('shadow-softness', '0.6');
+    viewer.setAttribute('field-of-view', '24deg');
     viewer.setAttribute('camera-orbit', '25deg 78deg auto');
     if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       viewer.setAttribute('auto-rotate', '');
@@ -124,7 +127,7 @@ if (heroModelSlot) {
       whiteFinish(viewer);
       document.querySelector('.hero-visual').classList.add('con-figura');
       const caption = document.querySelector('#hero-caption');
-      if (caption) caption.innerHTML = 'Figura de muestra, en blanco<br>como llega. Arrástrala para girarla.';
+      if (caption) caption.innerHTML = 'Figura de muestra hecha con IA,<br>en blanco como llega. Arrástrala para girarla.';
     }, { once: true });
     heroModelSlot.append(viewer);
   }).catch(() => {});
