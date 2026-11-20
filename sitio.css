@@ -751,3 +751,16 @@ h1 em, h2 em { font-family: var(--heading); font-style: italic; font-weight: 400
 .revelar { opacity: 0; transform: translateY(22px); transition: opacity .6s ease, transform .6s cubic-bezier(.2, .7, .2, 1); transition-delay: var(--reveal-delay, 0ms); }
 .revelar.visible { opacity: 1; transform: none; }
 @media (prefers-reduced-motion: reduce) { .revelar { opacity: 1; transform: none; transition: none; } }
+
+/* Botón fijo "Crear mi figura" en celular (portada) */
+.cta-fija { display: none; }
+@media (max-width: 700px) {
+  .cta-fija { display: flex; align-items: center; justify-content: space-between; gap: 12px; position: fixed; left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); z-index: 40;
+    padding: 8px 8px 8px 18px; border-radius: 999px; background: var(--white); border: 1px solid var(--line); box-shadow: 0 10px 30px #1e2a2133;
+    transform: translateY(140%); opacity: 0; pointer-events: none; transition: transform .35s cubic-bezier(.2, .7, .2, 1), opacity .25s; }
+  .cta-fija.visible { transform: none; opacity: 1; pointer-events: auto; }
+  .cta-fija small { order: -1; font-size: 13px; color: var(--muted); }
+  .cta-fija .button { padding: 12px 18px; font-size: 15px; }
+  .theme-dark .cta-fija { background: #202621; border-color: #39433b; box-shadow: 0 10px 30px #00000066; }
+}
+@media (max-width: 700px) and (prefers-reduced-motion: reduce) { .cta-fija { transition: none; } }

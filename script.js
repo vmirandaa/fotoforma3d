@@ -243,3 +243,34 @@ if (document.querySelector('.how-section')) {
   revealOnScroll(document.querySelectorAll('.how-heading, .how-steps article, #la-foto .section-intro, .tip-grid .offer, #precios .section-intro, .faq-intro, .faq-list details'));
   catalogPromise.then(() => revealOnScroll(document.querySelectorAll('.size-card, .size-compare'))).catch(() => {});
 }
+
+// Botón fijo "Crear mi figura" en celular: se muestra una vez que el botón de la portada quedó atrás
+// y se esconde cuando hay otro botón para crear la figura a la vista (precios) o al llegar al pie.
+const stickyCta = document.querySelector('#cta-fija');
+if (stickyCta) {
+  const stickyQuery = window.matchMedia('(max-width: 700px)');
+  const heroCta = document.querySelector('.hero-actions');
+  const otherCtas = [document.querySelector('.price-cta'), document.querySelector('.footer')].filter(Boolean);
+  const stickyLink = stickyCta.querySelector('a');
+  let stickyQueued = false;
+  const onScreen = (element) => {
+    const box = element.getBoundingClientRect();
+    return box.bottom > 0 && box.top < window.innerHeight;
+  };
+  const updateSticky = () => {
+    stickyQueued = false;
+    const show = stickyQuery.matches && heroCta && heroCta.getBoundingClientRect().bottom < 0 && !otherCtas.some(onScreen);
+    stickyCta.classList.toggle('visible', show);
+    stickyCta.setAttribute('aria-hidden', String(!show));
+    stickyLink.tabIndex = show ? 0 : -1;
+  };
+  const queueSticky = () => {
+    if (stickyQueued) return;
+    stickyQueued = true;
+    window.setTimeout(updateSticky, 60);
+  };
+  window.addEventListener('scroll', queueSticky, { passive: true });
+  window.addEventListener('resize', queueSticky);
+  stickyQuery.addEventListener('change', queueSticky);
+  updateSticky();
+}
