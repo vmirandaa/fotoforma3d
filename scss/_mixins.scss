@@ -1,0 +1,44 @@
+// Herramientas de Sass para escribir estilos nuevos. No generan CSS por sí solas.
+//
+// Para usarlas en un archivo, agrega al principio:
+//   @use 'mixins' as *;
+//
+// Ejemplo:
+//   .mi-tarjeta {
+//     padding: 24px;
+//     @include celular { padding: 16px; }
+//   }
+//
+// Los colores del sitio siguen siendo variables de CSS (var(--green), var(--soft), var(--line)…),
+// definidas en _base.scss y _tema.scss: así cambian solas en modo oscuro.
+
+// Ancho máximo que se considera celular (es el mismo que usa el resto de las hojas).
+$celular: 700px;
+
+// Reglas solo para celular.
+@mixin celular {
+  @media (max-width: $celular) {
+    @content;
+  }
+}
+
+// Reglas solo para pantallas más anchas que un celular.
+@mixin computador {
+  @media (min-width: $celular + 1) {
+    @content;
+  }
+}
+
+// Reglas solo en modo oscuro (la página agrega la clase .theme-dark al body).
+@mixin oscuro {
+  .theme-dark & {
+    @content;
+  }
+}
+
+// Reglas solo si la persona no pidió reducir el movimiento.
+@mixin con-movimiento {
+  @media (prefers-reduced-motion: no-preference) {
+    @content;
+  }
+}

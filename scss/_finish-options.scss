@@ -1,0 +1,53 @@
+// Creador: acabado (en blanco o pintada por el taller) y total de la reserva
+
+.finish-options {
+  margin-top: 10px;
+}
+
+.size-option[hidden], .finish-note[hidden], .order-total[hidden] {
+  display: none;
+}
+
+.finish-note {
+  grid-column: 1/-1;
+  margin: 2px 0 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+.order-total {
+  margin: 10px 0 2px;
+  padding: 10px 12px;
+  border-radius: var(--radius-field);
+  background: var(--soft);
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.order-total strong {
+  font: 700 17px var(--display);
+  color: var(--ink);
+}
+
+.size-card .size-painted {
+  display: block;
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.size-card.featured .size-painted {
+  color: #d1d8cc;
+}
+
+.theme-dark .size-card .size-painted {
+  color: #b5c1b8;
+}
+
+@media (max-width: 700px) {
+  .size-card .size-painted {
+    font-size: 12px;
+    line-height: 1.4;
+  }
+}

@@ -1,0 +1,156 @@
+// Creador: pantalla de espera mientras se genera la vista previa
+
+.generation-progress {
+  margin: 14px 0 6px;
+  padding: 18px 18px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-inner);
+  background: var(--soft);
+}
+
+.generation-progress[hidden] {
+  display: none;
+}
+
+.wait-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.wait-head strong {
+  font: 500 18px var(--heading);
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.wait-time {
+  font: 600 13px var(--display);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.generation-progress .progress-track {
+  height: 6px;
+  background: var(--soft-strong);
+}
+
+.generation-progress .progress-track span {
+  transition: width 1s linear;
+}
+
+.wait-steps {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 7px;
+}
+
+.wait-steps li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--muted);
+  opacity: 0.7;
+}
+
+.wait-steps li i {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--soft-strong);
+  display: grid;
+  place-items: center;
+  font: normal 700 10px/1 var(--display);
+  color: #fff;
+}
+
+.wait-steps li.hecho {
+  opacity: 1;
+}
+
+.wait-steps li.hecho i {
+  background: var(--green);
+  border-color: var(--green);
+}
+
+.wait-steps li.hecho i::before {
+  content: "✓";
+}
+
+.wait-steps li.actual {
+  opacity: 1;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.wait-steps li.actual i {
+  border-color: var(--green);
+  border-right-color: transparent;
+  animation: wait-spin 0.9s linear infinite;
+}
+
+@keyframes wait-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.wait-expect {
+  margin: 14px 0 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+.wait-tip {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: var(--radius-field);
+  background: var(--white);
+  border: 1px solid var(--line);
+}
+
+.wait-tip span {
+  display: block;
+  font: 700 10px var(--display);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--green);
+  margin-bottom: 4px;
+}
+
+.wait-tip p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ink);
+  min-height: 3.2em;
+}
+
+.generation-progress.terminado .wait-expect, .generation-progress.terminado .wait-tip,
+.generation-progress.fallido .wait-expect, .generation-progress.fallido .wait-tip {
+  display: none;
+}
+
+.generation-progress.fallido .progress-track span {
+  background: #b0786b;
+}
+
+.theme-dark .wait-steps li.hecho i {
+  color: #14201a;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wait-steps li.actual i {
+    animation: none;
+    border-right-color: var(--green);
+  }
+  .generation-progress .progress-track span {
+    transition: none;
+  }
+}

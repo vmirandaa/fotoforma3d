@@ -16,7 +16,7 @@
       // La hoja se agrega aquí, después de la base, para que el navegador no la pida en la ruta equivocada.
       var styles = document.createElement('link');
       styles.rel = 'stylesheet';
-      styles.href = 'sitio.css';
+      styles.href = 'css/main.css';
       document.head.appendChild(styles);
     })();
   </script>
@@ -26,7 +26,7 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;1,9..144,400;1,9..144,500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body id="top" class="error-page">
-  <!-- Aplica el modo oscuro antes de dibujar la página, para que no se vea un destello claro al abrirla (script.js lo mantiene después). -->
+  <!-- Aplica el modo oscuro antes de dibujar la página, para que no se vea un destello claro al abrirla (js/main.js lo mantiene después). -->
   <script>(function () { var saved = null; try { saved = localStorage.getItem('forma-theme'); } catch (e) {} if (saved === 'dark' || (saved !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches)) { document.body.classList.add('theme-dark'); var meta = document.querySelector('meta[name=theme-color]'); if (meta) meta.content = '#171b18'; } })();</script>
 
   <div class="topline"><span>FORMA · FIGURAS 3D DE MASCOTAS</span></div>
@@ -81,7 +81,7 @@
   <footer class="footer"><a class="wordmark" href="index.html"><span class="brand-symbol">F</span>FORMA<span class="wordmark-dot">.</span></a><span>Figuras 3D de mascotas, desde su foto.</span><a href="index.html">IR AL INICIO ↑</a><small>© 2026 FORMA · FIGURAS 3D DE MASCOTAS</small></footer>
   <script>
     // Igual que la hoja de estilos: se pide después de fijar la base.
-    document.body.appendChild(Object.assign(document.createElement('script'), { src: 'script.js' }));
+    document.body.appendChild(Object.assign(document.createElement('script'), { src: 'js/main.js' }));
   </script>
 </body>
 </html>

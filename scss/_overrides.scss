@@ -1,0 +1,373 @@
+// Retoques posteriores (portada, celular, panel y modo oscuro)
+
+/* Entrada suave al bajar por la portada (js/main.js agrega .revelar solo si no se pide reducir el movimiento) */
+.revelar {
+  opacity: 0;
+  transform: translateY(22px);
+  transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+
+.revelar.visible {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .revelar {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+/* Botón fijo "Crear mi figura" en celular (portada) */
+.cta-fija {
+  display: none;
+}
+
+@media (max-width: 700px) {
+  .cta-fija {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: calc(12px + env(safe-area-inset-bottom));
+    z-index: 40;
+    padding: 8px 8px 8px 18px;
+    border-radius: 999px;
+    background: var(--white);
+    border: 1px solid var(--line);
+    box-shadow: 0 10px 30px rgba(30, 42, 33, 0.2);
+    transform: translateY(140%);
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 0.35s cubic-bezier(0.2, 0.7, 0.2, 1), opacity 0.25s;
+  }
+  .cta-fija.visible {
+    transform: none;
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .cta-fija small {
+    order: -1;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .cta-fija .button {
+    padding: 12px 18px;
+    font-size: 15px;
+  }
+  .theme-dark .cta-fija {
+    background: #202621;
+    border-color: #39433b;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  }
+}
+@media (max-width: 700px) and (prefers-reduced-motion: reduce) {
+  .cta-fija {
+    transition: none;
+  }
+}
+/* Franja de mensajes: en celular no cabe, así que se desliza de forma continua (con una copia para que no haya corte) */
+.ticker-copia {
+  display: none !important;
+}
+
+@media (max-width: 700px) {
+  .ticker {
+    justify-content: flex-start;
+  }
+  .ticker > div, .ticker > .ticker-copia {
+    display: flex !important;
+    flex: none;
+    min-width: max-content;
+    justify-content: flex-start;
+    padding-right: 17px;
+    animation: ticker-desliza 28s linear infinite;
+  }
+  .ticker > div::after {
+    content: "✳";
+    color: var(--lime);
+    font-size: 13px;
+  }
+  .theme-dark .ticker > div::after {
+    color: #b6d9bd;
+  }
+  @keyframes ticker-desliza {
+    to {
+      transform: translateX(-100%);
+    }
+  }
+}
+@media (max-width: 700px) and (prefers-reduced-motion: reduce) {
+  .ticker {
+    height: auto;
+    padding: 12px 5%;
+  }
+  .ticker > div {
+    animation: none;
+    flex-wrap: wrap;
+    justify-content: center;
+    min-width: 0;
+    white-space: normal;
+    text-align: center;
+    gap: 8px 14px;
+    padding-right: 0;
+  }
+  .ticker > div::after {
+    content: none;
+  }
+  .ticker > .ticker-copia {
+    display: none !important;
+  }
+}
+/* Comparador en celular: una talla a la vez junto a la taza, más grande */
+.compare-picker, .size-compare .solo-celular {
+  display: none;
+}
+
+@media (max-width: 700px) {
+  .size-compare .solo-computador {
+    display: none;
+  }
+  .size-compare .solo-celular {
+    display: inline;
+  }
+  .compare-picker {
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    margin: 0 auto 6px;
+    width: max-content;
+    border-radius: 999px;
+    background: var(--white);
+    border: 1px solid var(--line);
+  }
+  .compare-picker button {
+    min-width: 52px;
+    height: 36px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--muted);
+    font: 700 14px var(--display);
+    cursor: pointer;
+  }
+  .compare-picker button[aria-pressed=true] {
+    background: var(--green);
+    color: #fff;
+  }
+  .theme-dark .compare-picker {
+    background: #171b18;
+    border-color: #39433b;
+  }
+  .theme-dark .compare-picker button[aria-pressed=true] {
+    color: #14201a;
+  }
+  .compare-stage {
+    --cm: clamp(6px, (100cqw - 76px) / 22.5, 15px);
+    gap: clamp(16px, 7cqw, 40px);
+    --label: 44px;
+  }
+  .compare-item:not(.referencia):not(.elegida) {
+    display: none;
+  }
+  .compare-label {
+    font-size: 13px;
+  }
+  .compare-label strong {
+    font-size: 15px;
+  }
+  .compare-item.elegida .compare-label strong {
+    color: var(--green);
+  }
+}
+/* Tallas en celular: una debajo de otra, compactas (medida a la izquierda, precio a la derecha) */
+@media (max-width: 700px) {
+  .size-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .size-grid .size-card {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-areas: "nombre etiqueta" "medida precio" "texto texto" "pintada pintada";
+    align-items: baseline;
+    column-gap: 14px;
+    padding: 16px 18px;
+  }
+  .size-card .size-name {
+    grid-area: nombre;
+  }
+  .size-card .size-tag {
+    grid-area: etiqueta;
+    position: static;
+    justify-self: end;
+  }
+  .size-card .size-measure {
+    grid-area: medida;
+    margin-top: 4px;
+    font-size: 30px;
+  }
+  .size-card .size-price {
+    grid-area: precio;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    justify-self: end;
+    font-size: 20px;
+  }
+  .size-card p {
+    grid-area: texto;
+    margin: 4px 0 0;
+  }
+  .size-card .size-painted {
+    grid-area: pintada;
+    margin-top: 6px;
+    padding-top: 8px;
+    border-top: 1px solid var(--line);
+  }
+  .size-card.featured .size-painted {
+    border-color: #71806f;
+  }
+  .theme-dark .size-card .size-painted {
+    border-color: #424e45;
+  }
+  .theme-dark .size-card.featured .size-painted {
+    border-color: #758b79;
+  }
+}
+/* Las esquinas redondeadas de las preguntas frecuentes dejaban ver el fondo de la página:
+   detrás de ellas se pinta el mismo color de la sección de precios, que va justo antes. */
+.price-section + .faq-section {
+  position: relative;
+}
+
+.price-section + .faq-section::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 40px;
+  background: var(--soft);
+  z-index: -1;
+}
+
+/* En celular la lista de consejos va sin recuadro propio: ya está dentro del recuadro del formulario */
+@media (max-width: 700px) {
+  .photo-checklist, .theme-dark .photo-checklist {
+    border: 0;
+    background: none;
+    border-radius: 0;
+    padding: 0;
+    margin: 4px 0 20px;
+  }
+}
+/* Sin la frase de apoyo, el encabezado del paso de fotos se oculta completo en el creador por pasos */
+.studio-form.wizard .studio-form-heading {
+  display: none;
+}
+
+/* Pestañas del creador en celular: un selector de dos opciones parejas, sin subtítulos ni flechas */
+@media (max-width: 700px) {
+  .studio-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+    width: auto;
+    margin: 16px 4% 0;
+    padding: 4px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--white);
+  }
+  .studio-tab {
+    justify-content: center;
+    gap: 8px;
+    padding: 11px 10px;
+    border-radius: 999px;
+  }
+  .studio-tab small, .studio-tab > b {
+    display: none;
+  }
+  .studio-tab > span:first-child {
+    font-size: 12px;
+  }
+  .studio-tab strong {
+    font-size: 15px;
+  }
+  .studio-tab.active {
+    background: var(--green);
+  }
+  .studio-tab.active > span:first-child, .studio-tab.active strong {
+    color: #fff;
+  }
+  .theme-dark .studio-tabs {
+    background: #171b18;
+    border-color: #39433b;
+  }
+  .theme-dark .studio-tab.active > span:first-child, .theme-dark .studio-tab.active strong {
+    color: #14201a;
+  }
+}
+/* Zona de subida: en pantallas táctiles no se puede arrastrar, así que se invita a tocar */
+.upload-zone .con-dedo {
+  display: none;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .upload-zone .con-mouse {
+    display: none;
+  }
+  .upload-zone .con-dedo {
+    display: block;
+  }
+}
+.upload-zone .upload-limit {
+  left: 12px;
+  right: 12px;
+  text-align: center;
+  line-height: 1.4;
+}
+
+/* Panel en celular: más aire entre datos; el estado ocupa toda la fila y los dos botones van debajo, parejos */
+@media (max-width: 700px) {
+  .order-card {
+    gap: 14px 20px;
+    padding: 18px;
+  }
+  .order-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .order-actions select {
+    grid-column: 1/-1;
+    height: 46px;
+    padding: 0 12px;
+  }
+  .order-actions button {
+    height: 44px;
+    padding: 0 10px;
+    font-size: 14px;
+    white-space: nowrap;
+  }
+}
+/* El botón de modo reserva el ancho de su texto más largo ("Modo oscuro"): así, al cambiar a "Modo claro",
+   no se achica ni corre los enlaces del menú durante la transición. */
+#theme-label {
+  display: inline-block;
+  text-align: left;
+}
+
+#theme-label::after {
+  content: "Modo oscuro";
+  display: block;
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
+}

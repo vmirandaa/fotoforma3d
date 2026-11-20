@@ -7,9 +7,14 @@
     "node": ">=20.6"
   },
   "scripts": {
-    "start": "node server.mjs"
+    "start": "node server.mjs",
+    "build:css": "sass scss/main.scss css/main.css --no-source-map --style=expanded",
+    "watch:css": "sass scss/main.scss css/main.css --no-source-map --style=expanded --watch"
   },
   "dependencies": {
     "nodemailer": "^10.5.0"
+  },
+  "devDependencies": {
+    "sass": "^1.108.2"
   }
 }

@@ -44,7 +44,9 @@ export function buildOrderEmails(order, config) {
   const from = { name: 'FORMA', address: config.from };
   const pet = order.petName || 'Sin nombre';
   const finish = order.finish === 'pintada' ? 'pintada por el taller' : 'en blanco';
-  const figure = order.measure + ', ' + finish + ' · ' + formatPrice(order.price);
+  const quantity = Number(order.quantity) > 1 ? Number(order.quantity) : 1;
+  const extras = order.extrasText ? ', ' + order.extrasText : '';
+  const figure = order.measure + ', ' + finish + extras + ' · ' + formatPrice(order.price);
   const species = SPECIES_LABELS[order.species] || order.species || '';
 
   const shopRows = [
@@ -54,6 +56,8 @@ export function buildOrderEmails(order, config) {
     ['Cliente', order.name],
     ['Correo', order.email]
   ];
+  if (quantity > 1) shopRows.push(['Cantidad', quantity + ' figuras iguales']);
+  if (order.baseName) shopRows.push(['Nombre en la base', order.baseName]);
   if (order.notes) shopRows.push(['Comentarios', order.notes]);
   shopRows.push(['Modelo', order.modelFile ? 'Guardado como ' + order.modelFile : 'No se pudo guardar una copia']);
   const shopTitle = 'Nueva reserva ' + order.code;
@@ -61,7 +65,8 @@ export function buildOrderEmails(order, config) {
 
   const customerRows = [
     ['Código de reserva', order.code],
-    ['Figura', (order.petName ? 'La figura de ' + order.petName : 'Tu figura') + ', ' + order.measure + ', ' + finish],
+    ['Figura', (order.petName ? 'La figura de ' + order.petName : 'Tu figura') + ', ' + order.measure + ', ' + finish + extras],
+    ...(quantity > 1 ? [['Cantidad', quantity + ' figuras iguales']] : []),
     ['Precio', formatPrice(order.price) + ' (el envío se cotiza según tu comuna)']
   ];
   const customerTitle = 'Hola ' + order.name + ', recibimos tu reserva';

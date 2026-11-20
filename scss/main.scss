@@ -1,0 +1,23 @@
+// FORMA · estilos del sitio.
+// Este archivo une las partes en el orden en que se aplican: cada una puede ajustar a las anteriores.
+// Para generar css/main.css: npm run build:css (una vez) o npm run watch:css (se regenera al guardar).
+
+/* FORMA · hoja de estilos generada desde scss/main.scss con Sass. No la edites a mano: cambia los archivos de scss/ y ejecuta npm run build:css. */
+
+@use 'base'; // Base: colores, cabecera, portada, secciones y pie
+@use 'creator'; // Creador: encabezado, formulario y visor
+@use 'typography'; // Escala de letra
+@use 'creator-tabs'; // Creador: pestañas y distribución de los pasos
+@use 'pets'; // Mascotas: dibujo, tallas, consejos y lista de fotos
+@use 'admin'; // Panel de reservas (admin.html)
+@use 'order-tracking'; // Mi pedido (ingresar.html)
+@use 'theme'; // Tema: tipografía Fraunces, botones en píldora y modo oscuro verde
+@use 'mobile'; // Celular: tamaños mínimos de letra y campos (va al final para tener prioridad)
+@use 'size-compare'; // Comparador de tamaños (portada, sección de precios)
+@use 'loading'; // Creador: pantalla de espera mientras se genera la vista previa
+@use 'finish-options'; // Creador: acabado (en blanco o pintada por el taller) y total de la reserva
+@use 'creator-steps'; // Creador por pasos en celular (js/creator.js agrega la clase .wizard bajo 700 px)
+@use 'error-page'; // Página no encontrada (404.html)
+@use 'overrides'; // Retoques posteriores (portada, celular, panel y modo oscuro)
+@use 'angle-upload'; // Creador: subida por ángulos (frente, costados y espalda)
+@use 'order-extras'; // Creador: extras del pedido (formato, estilo, base y cantidad)

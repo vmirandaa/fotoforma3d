@@ -1,0 +1,162 @@
+// Celular: tamaños mínimos de letra y campos (va al final para tener prioridad)
+
+/* Lectura en celular: se carga al final de cada página para que estos tamaños tengan prioridad.
+   Criterio: texto corrido de 13 a 14 px, etiquetas en mayúsculas de 11 px como mínimo
+   y campos de formulario de 16 px (en el iPhone, uno más chico hace zoom al tocarlo). */
+@media (max-width: 700px) {
+  /* Comunes */
+  .topline, .topline a {
+    font-size: 11px;
+  }
+  .nav, .nav-cta, .theme-toggle {
+    font-size: 15px;
+  }
+  .eyebrow {
+    font-size: 12px;
+  }
+  .fine-print {
+    font-size: 13px;
+    line-height: 1.7;
+  }
+  .footer > span {
+    font-size: 13px;
+  }
+  .footer > a:nth-of-type(2), .footer small {
+    font-size: 11px;
+  }
+  /* Portada */
+  .hero-meta {
+    font-size: 11px;
+  }
+  .meta-number {
+    font-size: 12px;
+  }
+  .tile-label, .tile-corner {
+    font-size: 10px;
+  }
+  .visual-sticker {
+    width: 66px;
+    height: 66px;
+  }
+  .visual-sticker small {
+    font-size: 9px;
+  }
+  .ticker > div {
+    font-size: 11px;
+  }
+  .section-intro > p, .how-heading > p {
+    font-size: 15px;
+    line-height: 1.75;
+  }
+  .step-top, .offer-kicker, .size-card .size-name, .size-card .size-tag {
+    font-size: 11px;
+  }
+  .how-steps p, .offer p, .size-card p, .price-cta > span, .faq-list details p, .faq-intro > p {
+    font-size: 14px;
+    line-height: 1.75;
+  }
+  .faq-list summary {
+    font-size: 15px;
+  }
+  /* Creador */
+  .studio-page .back-link {
+    font-size: 13px;
+  }
+  .studio-tab strong {
+    font-size: 13px;
+  }
+  .studio-tab small {
+    font-size: 12px;
+  }
+  .studio-page .studio-form-heading p, .studio-page .upload-zone small {
+    font-size: 13px;
+  }
+  .studio-page .upload-limit {
+    font-size: 11px;
+  }
+  .shot-guide strong {
+    font-size: 14px;
+  }
+  .shot-guide small, .shot-tip, .more-angles {
+    font-size: 13px;
+  }
+  /* El ángulo de cada foto va bajo la miniatura, con letra de 16 px para que el iPhone no haga zoom */
+  .prepare-panel .file-list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .file-thumb {
+    aspect-ratio: auto;
+  }
+  .file-thumb img {
+    aspect-ratio: 1;
+    height: auto;
+  }
+  .file-thumb select {
+    position: static;
+    width: 100%;
+    height: 36px;
+    font-size: 16px;
+    border: 0;
+    border-top: 1px solid var(--line);
+    background: var(--white);
+    color: var(--ink);
+  }
+  .studio-page .field-block > label, .tail-field legend, .tail-describe label, .size-options legend {
+    font-size: 13px;
+  }
+  .studio-page .field-block > label span {
+    font-size: 10px;
+  }
+  .choice span {
+    font-size: 14px;
+    padding: 10px 14px;
+  }
+  .tail-describe small {
+    font-size: 12px;
+  }
+  .studio-page .consent-row, .studio-page .generation-state, .generate-hint {
+    font-size: 13px;
+  }
+  .studio-page .progress-label, .studio-page .privacy-message {
+    font-size: 12px;
+  }
+  .studio-page .result-heading .eyebrow {
+    font-size: 11px;
+  }
+  .studio-page .model-state {
+    font-size: 10px;
+  }
+  .studio-page .model-placeholder p {
+    font-size: 13px;
+  }
+  .studio-page .viewer-hint {
+    font-size: 12px;
+  }
+  .finish-toggle button {
+    font-size: 13px;
+  }
+  .studio-page .result-note, .view-layout .result-note, .order-panel > p, .order-status {
+    font-size: 13px;
+  }
+  .size-option small {
+    font-size: 12px;
+  }
+  .studio-page .studio-footnote span {
+    font-size: 11px;
+  }
+  .studio-page .studio-footnote p {
+    font-size: 14px;
+  }
+  /* Campos de formulario: 16 px evita el zoom automático del iPhone */
+  .field-block input[type=text], .field-block input[type=email], .field-block textarea, .field-block select,
+  .studio-page .field-block textarea, .studio-page .field-block select, .order-panel textarea,
+  .admin-login input, .admin-search input, .order-actions select {
+    font-size: 16px;
+  }
+  .order-actions select {
+    height: 40px;
+  }
+  .photo-thumb span {
+    font-size: 10px;
+  }
+}

@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { randomUUID, randomBytes, createHash, timingSafeEqual } from 'node:crypto';
-import { sendOrderEmails, mailConfig } from './correo.mjs';
+import { sendOrderEmails, mailConfig } from './mailer.mjs';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 loadLocalEnv();
@@ -107,8 +107,41 @@ function tailSummary(tail, tailNotes) {
   if (tail === 'sin-cola') return 'No tiene cola o es muy corta';
   return '';
 }
+// Extras del pedido (formato, estilo, base y cantidad): se validan contra data/catalog.json y el precio se calcula aquí,
+// nunca con lo que mande el navegador. Devuelve { error } si algo no corresponde.
+function readOrderExtras(catalog, body) {
+  const extras = catalog.extras || {};
+  const pick = (list, id) => {
+    if (!Array.isArray(list) || !list.length) return null;
+    return id ? list.find((item) => item.id === id) : list[0];
+  };
+  const formato = pick(extras.formatos, body.format);
+  const estilo = pick(extras.estilos, body.style);
+  const base = pick(extras.bases, body.base);
+  if ((body.format && !formato) || (body.style && !estilo) || (body.base && !base)) return { error: 'Alguna de las opciones elegidas ya no está disponible. Recarga la página.' };
+  const max = Number(extras.cantidadMaxima) || 10;
+  const quantity = Number(body.quantity ?? 1);
+  if (!Number.isInteger(quantity) || quantity < 1 || quantity > max) return { error: 'La cantidad debe ser entre 1 y ' + max + '.' };
+  const baseName = base?.conNombre ? cleanText(body.baseName, 24) : '';
+  if (base?.conNombre && !baseName) return { error: 'Escribe el nombre que va en la base.' };
+  const extraPrice = [formato, estilo, base].reduce((total, item) => total + (Number(item?.precio) || 0), 0);
+  // Resumen legible para el panel, Mi pedido y los correos. Solo nombra lo que se aparta de lo básico.
+  const parts = [];
+  if (formato && Number(formato.precio) > 0) parts.push(formato.nombre.charAt(0).toLowerCase() + formato.nombre.slice(1));
+  if (estilo && Number(estilo.precio) > 0) parts.push('estilo ' + estilo.nombre.toLowerCase());
+  if (base && Number(base.precio) > 0) parts.push(base.conNombre ? base.nombre.toLowerCase() + ' «' + baseName + '»' : base.nombre.toLowerCase());
+  return {
+    format: formato?.id || '',
+    style: estilo?.id || '',
+    base: base?.id || '',
+    baseName,
+    quantity,
+    extraPrice,
+    extrasText: parts.join(' · ')
+  };
+}
 function loadCatalog() {
-  return JSON.parse(fs.readFileSync(path.join(ROOT, 'catalogo.json'), 'utf8'));
+  return JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'catalog.json'), 'utf8'));
 }
 async function readRequestBody(request, limit = MAX_BODY) {
   const chunks = [];
@@ -238,12 +271,15 @@ async function handleOrder(request, response) {
   }
   const task = tasks.get(String(body?.taskId || ''));
   if (!task || task.state !== 'done' || !task.glb) return sendJson(response, 409, { error: 'La vista previa ya no está disponible. Genérala de nuevo para reservar.' });
-  const size = loadCatalog().tallas.find((item) => item.id === body.size);
+  const catalog = loadCatalog();
+  const size = catalog.tallas.find((item) => item.id === body.size);
   if (!size) return sendJson(response, 400, { error: 'Elige un tamaño para tu figura.' });
-  // Acabado: en blanco (incluido) o pintada por el taller, con el recargo que indica catalogo.json para esa talla.
+  // Acabado: en blanco (incluido) o pintada por el taller, con el recargo que indica data/catalog.json para esa talla.
   const finish = body.finish === 'pintada' ? 'pintada' : 'blanco';
   const paintPrice = finish === 'pintada' ? Number(size.pintada) : 0;
   if (finish === 'pintada' && !(paintPrice > 0)) return sendJson(response, 400, { error: 'Esta talla no se ofrece pintada.' });
+  const extras = readOrderExtras(catalog, body);
+  if (extras.error) return sendJson(response, 400, { error: extras.error });
   const name = cleanText(body.name, 80);
   const email = cleanText(body.email, 120);
   if (!name) return sendJson(response, 400, { error: 'Escribe tu nombre para reservar.' });
@@ -276,7 +312,15 @@ async function handleOrder(request, response) {
     finish,
     basePrice: size.precio,
     paintPrice,
-    price: size.precio + paintPrice,
+    format: extras.format,
+    style: extras.style,
+    base: extras.base,
+    baseName: extras.baseName,
+    extraPrice: extras.extraPrice,
+    extrasText: extras.extrasText,
+    quantity: extras.quantity,
+    unitPrice: size.precio + paintPrice + extras.extraPrice,
+    price: (size.precio + paintPrice + extras.extraPrice) * extras.quantity,
     name,
     email,
     petName: task.petName,
@@ -289,7 +333,7 @@ async function handleOrder(request, response) {
   };
   await fs.promises.appendFile(ORDERS_FILE,JSON.stringify(order) + '\n', 'utf8');
   task.orderCode = code;
-  console.log('Nueva reserva ' + code + ' · ' + size.medida + (finish === 'pintada' ? ' pintada' : '') + ' · ' + photos.length + ' foto(s)' + (modelFile ? '' : ' · SIN COPIA DEL MODELO'));
+  console.log('Nueva reserva ' + code + ' · ' + size.medida + (finish === 'pintada' ? ' pintada' : '') + (extras.extrasText ? ' · ' + extras.extrasText : '') + (extras.quantity > 1 ? ' · ' + extras.quantity + ' unidades' : '') + ' · ' + photos.length + ' foto(s)' + (modelFile ? '' : ' · SIN COPIA DEL MODELO'));
   sendJson(response, 201, { code });
   // El aviso por correo va después de responder: si falla, la reserva ya quedó guardada.
   sendOrderEmails(order).then((mail) => {
@@ -449,6 +493,8 @@ async function handleTracking(request, response) {
     statusUpdatedAt: states[order.code]?.updatedAt || null,
     measure: order.measure,
     finish: order.finish || 'blanco',
+    extrasText: order.extrasText || '',
+    quantity: order.quantity || 1,
     price: order.price,
     petName: order.petName || '',
     species: order.species || '',

@@ -1,0 +1,156 @@
+// Comparador de tamaños (portada, sección de precios)
+
+.size-compare {
+  container-type: inline-size;
+  margin: 18px 0 0;
+  padding: 22px 20px 16px;
+  background: var(--soft-strong);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+}
+
+.size-compare[hidden] {
+  display: none;
+}
+
+.compare-stage {
+  --cm: clamp(5.5px, (100cqw - 130px) / 47, 15px);
+  --label: 38px;
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: clamp(6px, 2.4cqw, 26px);
+  padding: 14px 0 0 30px;
+  min-height: calc(var(--max-cm, 16) * var(--cm) + var(--label) + 14px);
+}
+
+.compare-stage::after {
+  content: "";
+  position: absolute;
+  left: 30px;
+  right: 0;
+  bottom: var(--label);
+  height: 2px;
+  border-radius: 2px;
+  background: #a9b59c;
+}
+
+.compare-ruler {
+  position: absolute;
+  left: 0;
+  bottom: var(--label);
+  width: 18px;
+  height: calc(var(--max-cm, 16) * var(--cm));
+  border-right: 1px solid var(--line);
+  background: repeating-linear-gradient(to top, var(--muted) 0 1px, transparent 1px var(--cm)) right bottom/6px 100% no-repeat;
+  opacity: 0.75;
+}
+
+.compare-ruler span {
+  position: absolute;
+  right: 9px;
+  bottom: calc(var(--at) * var(--cm) - 6px);
+  font: 600 10px/1 var(--display);
+  color: var(--muted);
+}
+
+.compare-ruler span::after {
+  content: "";
+  position: absolute;
+  right: -9px;
+  top: 5px;
+  width: 10px;
+  height: 1px;
+  background: var(--muted);
+}
+
+.compare-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.compare-art {
+  display: block;
+  height: calc(var(--h) * var(--cm));
+  width: auto;
+  aspect-ratio: 120/150;
+  overflow: visible;
+}
+
+.compare-art.pet-figure {
+  filter: drop-shadow(2px 4px 3px rgba(63, 81, 68, 0.2));
+}
+
+.compare-mug {
+  aspect-ratio: 112/100;
+  fill: #b7c2aa;
+  stroke: #b7c2aa;
+}
+
+.compare-mug .mug-shine {
+  stroke: var(--white);
+  opacity: 0.55;
+}
+
+.compare-label {
+  height: var(--label);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+  line-height: 1.25;
+}
+
+.compare-label strong {
+  font: 700 13px var(--display);
+  color: var(--ink);
+}
+
+.compare-item.destacada .compare-label strong {
+  color: var(--green);
+}
+
+.compare-item.referencia .compare-label strong {
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.size-compare figcaption {
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.theme-dark .compare-art.pet-figure {
+  filter: drop-shadow(2px 4px 3px rgba(0, 0, 0, 0.3333333333));
+}
+
+.theme-dark .compare-mug {
+  fill: #3a463c;
+  stroke: #3a463c;
+}
+
+@media (max-width: 700px) {
+  .size-compare {
+    padding: 18px 12px 14px;
+  }
+  .compare-label {
+    font-size: 11px;
+  }
+  .compare-label strong {
+    font-size: 12px;
+  }
+}
+.theme-dark .size-compare {
+  background: var(--white);
+}
+
+.theme-dark .compare-stage::after {
+  background: var(--line);
+}

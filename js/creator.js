@@ -159,9 +159,10 @@ async function preparePhoto(file) {
   const name = file.name.replace(/\.[^.]+$/, '') + '.jpg';
   return { file: new File([blob], name, { type: 'image/jpeg', lastModified: file.lastModified }), small };
 }
-async function addFiles(files) {
+// slotLabel: en el modo por ángulos, la foto va a ese recuadro (Front, Left, Right o Back) y reemplaza la que hubiera.
+async function addFiles(files, slotLabel = '') {
   const accepted = [];
-  for (const file of Array.from(files || [])) {
+  for (const file of Array.from(files || []).slice(0, slotLabel ? 1 : undefined)) {
     if (!/^image\/(png|jpeg|webp)$/.test(file.type)) {
       showState('Solo se aceptan fotos JPG, PNG o WEBP.');
       continue;
@@ -171,8 +172,11 @@ async function addFiles(files) {
       continue;
     }
     const key = file.name + ':' + file.size;
-    if (selectedFiles.some((entry) => entry.sourceKey === key) || accepted.some((item) => item.key === key)) continue;
-    if (selectedFiles.length + preparingPhotos + accepted.length >= 5) {
+    if (selectedFiles.some((entry) => entry.sourceKey === key && entry.label !== slotLabel) || accepted.some((item) => item.key === key)) {
+      if (slotLabel) showState('Esa foto ya está en otro ángulo.');
+      continue;
+    }
+    if (!slotLabel && selectedFiles.length + preparingPhotos + accepted.length >= 5) {
       showState('Puedes subir hasta cinco fotos de la misma mascota.');
       break;
     }
@@ -189,7 +193,13 @@ async function addFiles(files) {
   for (const item of accepted) {
     const prepared = await preparePhoto(item.file);
     preparingPhotos -= 1;
-    selectedFiles.push({ file: prepared.file, sourceKey: item.key, label: selectedFiles.length === 0 ? 'Front' : '?' });
+    if (slotLabel) {
+      const previous = selectedFiles.findIndex((entry) => entry.label === slotLabel);
+      if (previous >= 0) selectedFiles.splice(previous, 1);
+      selectedFiles.push({ file: prepared.file, sourceKey: item.key, label: slotLabel });
+    } else {
+      selectedFiles.push({ file: prepared.file, sourceKey: item.key, label: selectedFiles.length === 0 ? 'Front' : '?' });
+    }
     if (prepared.small) smallPhotos.push(item.file.name);
     renderFiles();
     syncButtons();
@@ -203,6 +213,7 @@ async function addFiles(files) {
 }
 function renderFiles() {
   selectedFiles.forEach((entry) => { if (entry.previewUrl) URL.revokeObjectURL(entry.previewUrl); });
+  if (uploadMode === 'angulos') { renderAngleSlots(); return; }
   fileList.replaceChildren();
   fileList.classList.toggle('single', selectedFiles.length < 2);
   moreAngles.hidden = selectedFiles.length === 0;
@@ -257,11 +268,115 @@ uploadZone.addEventListener('drop', (event) => {
   addFiles(event.dataTransfer.files);
 });
 
+// --- Subida por ángulos: cuatro recuadros (frente, costados y espalda), una foto en cada uno ---
+const ANGLE_SLOTS = [
+  { label: 'Front', name: 'Frente', icon: '◉' },
+  { label: 'Left', name: 'Costado izquierdo', icon: '◐' },
+  { label: 'Right', name: 'Costado derecho', icon: '◑' },
+  { label: 'Back', name: 'Espalda', icon: '○' }
+];
+const uploadModeBox = document.querySelector('#upload-mode');
+const angleSlots = document.querySelector('#angle-slots');
+let uploadMode = 'libre';
+function renderAngleSlots() {
+  angleSlots.replaceChildren();
+  ANGLE_SLOTS.forEach((slot) => {
+    const entry = selectedFiles.find((item) => item.label === slot.label);
+    const box = document.createElement('label');
+    box.className = 'angle-slot' + (entry ? ' con-foto' : '') + (slot.label === 'Front' ? ' principal' : '');
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/png,image/jpeg,image/webp';
+    input.setAttribute('aria-label', (entry ? 'Cambiar' : 'Subir') + ' la foto: ' + slot.name);
+    input.addEventListener('change', () => { addFiles(Array.from(input.files), slot.label); input.value = ''; });
+    box.append(input);
+    if (entry) {
+      const image = document.createElement('img');
+      entry.previewUrl = URL.createObjectURL(entry.file);
+      image.src = entry.previewUrl;
+      image.alt = 'Foto: ' + slot.name;
+      const remove = document.createElement('button');
+      remove.type = 'button';
+      remove.textContent = '×';
+      remove.setAttribute('aria-label', 'Quitar la foto: ' + slot.name);
+      remove.addEventListener('click', (event) => {
+        event.preventDefault();
+        if (entry.previewUrl) URL.revokeObjectURL(entry.previewUrl);
+        selectedFiles.splice(selectedFiles.indexOf(entry), 1);
+        renderFiles();
+        syncButtons();
+        showState(selectedFiles.length ? filesReadyMessage() : 'Sube al menos una foto.', selectedFiles.length ? 'success' : '');
+      });
+      const name = document.createElement('span');
+      name.className = 'angle-name';
+      name.textContent = slot.name;
+      box.append(image, remove, name);
+    } else {
+      const icon = document.createElement('span');
+      icon.className = 'angle-icon';
+      icon.setAttribute('aria-hidden', 'true');
+      icon.textContent = slot.icon;
+      const name = document.createElement('strong');
+      name.textContent = slot.name;
+      const hint = document.createElement('small');
+      hint.textContent = slot.label === 'Front' ? 'La más importante' : 'Opcional';
+      box.append(icon, name, hint);
+    }
+    box.addEventListener('dragover', (event) => { event.preventDefault(); box.classList.add('dragover'); });
+    box.addEventListener('dragleave', () => box.classList.remove('dragover'));
+    box.addEventListener('drop', (event) => {
+      event.preventDefault();
+      box.classList.remove('dragover');
+      addFiles(event.dataTransfer.files, slot.label);
+    });
+    angleSlots.append(box);
+  });
+  const count = selectedFiles.length;
+  moreAngles.hidden = false;
+  moreAngles.classList.toggle('nudge', count === 1);
+  moreAngles.textContent = count === 0
+    ? 'Toca cada recuadro para subir la foto de ese ángulo. Con la de frente basta para empezar.'
+    : count < 4
+      ? 'Cada ángulo que sumes ayuda a que la figura salga más parecida, sobre todo la espalda si se ve la cola.'
+      : 'Tienes los cuatro ángulos: es la mejor base para la figura.';
+}
+// Al pasar a ángulos, las fotos que ya estaban se reparten en los recuadros (primero las que ya tenían ese ángulo).
+function setUploadMode(mode) {
+  if (mode === uploadMode || preparingPhotos) return;
+  uploadMode = mode;
+  if (mode === 'angulos') {
+    const slotLabels = ANGLE_SLOTS.map((slot) => slot.label);
+    const placed = new Set();
+    selectedFiles.forEach((entry) => {
+      if (slotLabels.includes(entry.label) && !placed.has(entry.label)) placed.add(entry.label);
+      else entry.label = '';
+    });
+    selectedFiles.forEach((entry) => {
+      if (entry.label) return;
+      const free = slotLabels.find((label) => !placed.has(label));
+      if (free) { entry.label = free; placed.add(free); }
+    });
+    const extra = selectedFiles.filter((entry) => !entry.label);
+    extra.forEach((entry) => {
+      if (entry.previewUrl) URL.revokeObjectURL(entry.previewUrl);
+      selectedFiles.splice(selectedFiles.indexOf(entry), 1);
+    });
+    if (extra.length) showState('Por ángulos caben cuatro fotos: quitamos ' + (extra.length === 1 ? 'una' : extra.length) + '. Revisa que cada una esté en su recuadro.');
+  }
+  uploadModeBox.querySelectorAll('button').forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.mode === mode)));
+  angleSlots.hidden = mode !== 'angulos';
+  uploadZone.hidden = mode === 'angulos';
+  fileList.hidden = mode === 'angulos';
+  renderFiles();
+  syncButtons();
+}
+uploadModeBox.querySelectorAll('button').forEach((button) => button.addEventListener('click', () => setUploadMode(button.dataset.mode)));
+
 // --- Creador por pasos en celular ---
 // En pantallas chicas el formulario se muestra en tres pantallas (fotos, su mascota, confirmar).
 // No se mueven elementos: cada uno lleva su número de paso y el CSS oculta los de los otros pasos.
 const WIZARD_STEPS = [
-  { title: 'Sus fotos', parts: ['.studio-form-heading', '.photo-checklist', '#upload-zone', '#file-list', '#more-angles'] },
+  { title: 'Sus fotos', parts: ['.studio-form-heading', '.photo-checklist', '#upload-mode', '#angle-slots', '#upload-zone', '#file-list', '#more-angles'] },
   { title: 'Su mascota', parts: ['#pet-name', '#pet-species', '.tail-field', '#pet-notes'] },
   { title: 'Confirmar', parts: ['.consent-row', '#generate-model', '#generate-hint', '#generation-progress', '.privacy-message'] }
 ];
@@ -498,7 +613,12 @@ async function runGeneration() {
   const petName = petNameInput.value.trim();
   try {
     const payload = new FormData();
-    selectedFiles.forEach((entry) => {
+    // Por ángulos, las fotos se envían en el orden de los recuadros (frente, costados, espalda).
+    const slotOrder = ANGLE_SLOTS.map((slot) => slot.label);
+    const photosToSend = uploadMode === 'angulos'
+      ? [...selectedFiles].sort((a, b) => slotOrder.indexOf(a.label) - slotOrder.indexOf(b.label))
+      : selectedFiles;
+    photosToSend.forEach((entry) => {
       payload.append('images', entry.file, entry.file.name);
       payload.append('image_label', entry.label);
     });
@@ -551,7 +671,112 @@ const paintOption = document.querySelector('#paint-option');
 const paintPrice = document.querySelector('#paint-price');
 const finishNote = document.querySelector('#finish-note');
 const orderTotal = document.querySelector('#order-total');
+const extrasBox = document.querySelector('#extras-options');
 let catalogSizes = [];
+let catalogExtras = { formatos: [], estilos: [], bases: [], cantidadMaxima: 10 };
+let baseNameInput = null;
+let quantityInput = null;
+
+// --- Extras del pedido: formato, estilo, base y cantidad (las opciones y recargos vienen de data/catalog.json) ---
+function checkedValue(name, fallback) {
+  const checked = orderForm.querySelector('input[name="' + name + '"]:checked');
+  return checked ? checked.value : fallback;
+}
+function selectedExtras() {
+  const find = (list, id) => list.find((item) => item.id === id) || list[0] || { id: '', precio: 0 };
+  const formato = find(catalogExtras.formatos, checkedValue('formato', ''));
+  const estilo = find(catalogExtras.estilos, checkedValue('estilo', ''));
+  const base = find(catalogExtras.bases, checkedValue('base', ''));
+  const max = Number(catalogExtras.cantidadMaxima) || 10;
+  const quantity = Math.min(max, Math.max(1, Math.round(Number(quantityInput && quantityInput.value) || 1)));
+  return { formato, estilo, base, baseName: base.conNombre && baseNameInput ? baseNameInput.value.trim() : '', quantity };
+}
+function priceLabel(value) {
+  return Number(value) > 0 ? '+' + formatPrice(value) : 'Incluido';
+}
+function buildChoiceGroup(legend, name, options) {
+  if (!options || !options.length) return null;
+  const group = document.createElement('fieldset');
+  group.className = 'size-options extras-group';
+  const title = document.createElement('legend');
+  title.textContent = legend;
+  group.append(title);
+  options.forEach((option, index) => {
+    const label = document.createElement('label');
+    label.className = 'size-option';
+    const input = document.createElement('input');
+    input.type = 'radio';
+    input.name = name;
+    input.value = option.id;
+    input.checked = index === 0;
+    input.addEventListener('change', updateOrderTotal);
+    const strong = document.createElement('strong');
+    strong.textContent = option.nombre;
+    const small = document.createElement('small');
+    small.textContent = [option.detalle, priceLabel(option.precio)].filter(Boolean).join(' · ');
+    label.append(input, strong, small);
+    group.append(label);
+  });
+  return group;
+}
+function buildExtras(extras) {
+  if (!extras || !extrasBox) return;
+  catalogExtras = { ...catalogExtras, ...extras };
+  extrasBox.replaceChildren();
+  const groups = [
+    buildChoiceGroup('Formato', 'formato', extras.formatos),
+    buildChoiceGroup('Estilo', 'estilo', extras.estilos),
+    buildChoiceGroup('Base', 'base', extras.bases)
+  ].filter(Boolean);
+  extrasBox.append(...groups);
+
+  // Nombre para la base: aparece solo con una base que lo lleva.
+  const nameBlock = document.createElement('div');
+  nameBlock.className = 'field-block base-name';
+  nameBlock.hidden = true;
+  const nameLabel = document.createElement('label');
+  nameLabel.htmlFor = 'base-name';
+  nameLabel.textContent = 'Nombre para la base';
+  baseNameInput = document.createElement('input');
+  baseNameInput.id = 'base-name';
+  baseNameInput.type = 'text';
+  baseNameInput.maxLength = 24;
+  baseNameInput.autocomplete = 'off';
+  baseNameInput.placeholder = 'Ej.: Luna';
+  baseNameInput.addEventListener('input', updateOrderTotal);
+  const nameHint = document.createElement('small');
+  nameHint.textContent = 'Hasta 24 letras. Lo grabamos tal como lo escribas.';
+  nameBlock.append(nameLabel, baseNameInput, nameHint);
+  extrasBox.append(nameBlock);
+
+  // Cantidad, con botones para sumar y restar.
+  const max = Number(extras.cantidadMaxima) || 10;
+  const quantity = document.createElement('div');
+  quantity.className = 'quantity-field';
+  const quantityLabel = document.createElement('label');
+  quantityLabel.htmlFor = 'order-quantity';
+  quantityLabel.textContent = 'Cantidad';
+  const stepper = document.createElement('div');
+  stepper.className = 'quantity-stepper';
+  const minus = Object.assign(document.createElement('button'), { type: 'button', textContent: '−' });
+  minus.setAttribute('aria-label', 'Una menos');
+  const plus = Object.assign(document.createElement('button'), { type: 'button', textContent: '+' });
+  plus.setAttribute('aria-label', 'Una más');
+  quantityInput = Object.assign(document.createElement('input'), { id: 'order-quantity', type: 'number', min: 1, max, value: 1, inputMode: 'numeric' });
+  const step = (delta) => {
+    quantityInput.value = Math.min(max, Math.max(1, (Number(quantityInput.value) || 1) + delta));
+    updateOrderTotal();
+  };
+  minus.addEventListener('click', () => step(-1));
+  plus.addEventListener('click', () => step(1));
+  quantityInput.addEventListener('input', updateOrderTotal);
+  quantityInput.addEventListener('change', () => step(0));
+  stepper.append(minus, quantityInput, plus);
+  const quantityHint = document.createElement('small');
+  quantityHint.textContent = 'Hasta ' + max + ' figuras iguales por reserva.';
+  quantity.append(quantityLabel, stepper, quantityHint);
+  extrasBox.append(quantity);
+}
 function selectedFinish() {
   const checked = orderForm.querySelector('input[name="finish"]:checked');
   return checked ? checked.value : 'blanco';
@@ -565,9 +790,15 @@ function updateOrderTotal() {
   paintPrice.textContent = canPaint ? '+' + formatPrice(size.pintada) + ' · por el taller' : 'por el taller';
   const painted = canPaint && selectedFinish() === 'pintada';
   finishNote.hidden = !painted;
+  const extras = selectedExtras();
+  const nameBlock = extrasBox && extrasBox.querySelector('.base-name');
+  if (nameBlock) nameBlock.hidden = !extras.base.conNombre;
   orderTotal.hidden = !size;
   if (size) {
-    orderTotal.replaceChildren('Total ', Object.assign(document.createElement('strong'), { textContent: formatPrice(size.precio + (painted ? Number(size.pintada) : 0)) }), ' más envío');
+    const unit = size.precio + (painted ? Number(size.pintada) : 0) + Number(extras.formato.precio || 0) + Number(extras.estilo.precio || 0) + Number(extras.base.precio || 0);
+    const parts = ['Total ', Object.assign(document.createElement('strong'), { textContent: formatPrice(unit * extras.quantity) }), ' más envío'];
+    if (extras.quantity > 1) parts.push(Object.assign(document.createElement('small'), { textContent: extras.quantity + ' × ' + formatPrice(unit) }));
+    orderTotal.replaceChildren(...parts);
   }
 }
 orderForm.querySelectorAll('input[name="finish"]').forEach((radio) => radio.addEventListener('change', () => {
@@ -578,6 +809,7 @@ orderForm.querySelectorAll('input[name="finish"]').forEach((radio) => radio.addE
 
 catalogPromise.then((catalog) => {
   catalogSizes = catalog.tallas;
+  buildExtras(catalog.extras);
   catalog.tallas.forEach((size) => {
     const option = document.createElement('label');
     option.className = 'size-option';
@@ -607,6 +839,8 @@ orderForm.addEventListener('submit', async (event) => {
   const email = orderEmail.value.trim();
   if (!name) { setOrderStatus('Escribe tu nombre para reservar.', 'error'); orderName.focus(); return; }
   if (!orderEmail.checkValidity() || !email) { setOrderStatus('Revisa tu correo: lo usaremos para confirmar el pedido.', 'error'); orderEmail.focus(); return; }
+  const extras = selectedExtras();
+  if (extras.base.conNombre && !extras.baseName) { setOrderStatus('Escribe el nombre que va en la base.', 'error'); baseNameInput.focus(); return; }
   orderBusy = true;
   syncButtons();
   setOrderStatus('Enviando tu reserva…');
@@ -614,7 +848,10 @@ orderForm.addEventListener('submit', async (event) => {
     const response = await fetch('/api/order', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ taskId, size: selectedSize(), finish: selectedFinish(), name, email, notes: orderNotes.value.trim() })
+      body: JSON.stringify({
+        taskId, size: selectedSize(), finish: selectedFinish(), name, email, notes: orderNotes.value.trim(),
+        format: extras.formato.id, style: extras.estilo.id, base: extras.base.id, baseName: extras.baseName, quantity: extras.quantity
+      })
     });
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || 'No se pudo registrar la reserva.');

@@ -33,9 +33,9 @@ themeButton.addEventListener('click', () => {
   else setTheme(nextIsDark, true);
 });
 
-// Catálogo de tallas y precios: una sola fuente (catalogo.json) para la portada, el estudio y el servidor.
+// Catálogo de tallas y precios: una sola fuente (data/catalog.json) para la portada, el estudio y el servidor.
 function formatPrice(value) { return '$' + Number(value).toLocaleString('es-CL'); }
-const catalogPromise = fetch('catalogo.json').then((response) => {
+const catalogPromise = fetch('data/catalog.json').then((response) => {
   if (!response.ok) throw new Error('catálogo no disponible');
   return response.json();
 });
@@ -178,11 +178,11 @@ nav.querySelectorAll('a').forEach((link) => link.addEventListener('click', () =>
   menuButton.setAttribute('aria-expanded', 'false');
 }));
 
-// Figura 3D de muestra en la portada. Si existe figura-muestra.glb se carga el visor y la figura
+// Figura 3D de muestra en la portada. Si existe assets/models/sample-figure.glb se carga el visor y la figura
 // reemplaza a la ilustración; si no existe, la portada queda con la ilustración tal como está.
 const heroModelSlot = document.querySelector('#hero-model');
 if (heroModelSlot) {
-  const HERO_MODEL = 'figura-muestra.glb';
+  const HERO_MODEL = 'assets/models/sample-figure.glb';
   const VIEWER_SCRIPT = 'https://ajax.googleapis.com/ajax/libs/model-viewer/4.4.0/model-viewer.min.js';
   const whiteFinish = (viewer) => {
     ((viewer.model && viewer.model.materials) || []).forEach((material) => {
