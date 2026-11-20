@@ -14,6 +14,8 @@
   <link rel="stylesheet" href="sitio.css">
 </head>
 <body id="top" class="studio-page cuenta-page">
+  <!-- Aplica el modo oscuro antes de dibujar la página, para que no se vea un destello claro al abrirla (script.js lo mantiene después). -->
+  <script>(function () { var saved = null; try { saved = localStorage.getItem('forma-theme'); } catch (e) {} if (saved === 'dark' || (saved !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches)) { document.body.classList.add('theme-dark'); var meta = document.querySelector('meta[name=theme-color]'); if (meta) meta.content = '#171b18'; } })();</script>
   <div class="topline"><span>FORMA · MI PEDIDO</span></div>
   <header class="header">
     <a class="wordmark" href="index.html" aria-label="FORMA, inicio"><span class="brand-symbol">F</span>FORMA<span class="wordmark-dot">.</span></a>

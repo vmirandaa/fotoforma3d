@@ -25,16 +25,17 @@ body.theme-dark{--paper:#171b18;--white:#202621;--ink:#eff4f0;--muted:#afbab1;--
 .theme-dark .footer{background:#1f2620}.theme-dark .footer>span,.theme-dark .footer small{color:#afbab1}.theme-dark .footer .brand-symbol{background:#6a8e71}
 .theme-dark .nav{background:#171b18}.theme-dark .nav-cta{background:#668a6d}
 
+/* Cambio entre modo claro y oscuro: el modo nuevo aparece encima del anterior en 0,4 s.
+   El anterior queda fijo debajo, así no hay un momento en que ambos se vean desteñidos. */
 @supports (view-transition-name: root){
-  ::view-transition-group(root){animation-duration:1s;animation-timing-function:ease-in-out}
-  ::view-transition-old(root){animation:theme-fade-out 1s ease-in-out both}
-  ::view-transition-new(root){animation:theme-fade-in 1s ease-in-out both}
+  ::view-transition-old(root){animation:none}
+  ::view-transition-new(root){animation:theme-fade-in .4s ease-out both}
   @keyframes theme-fade-in{from{opacity:0}to{opacity:1}}
-  @keyframes theme-fade-out{from{opacity:1}to{opacity:0}}
 }
 @media(prefers-reduced-motion:reduce){
-  ::view-transition-group(root),::view-transition-old(root),::view-transition-new(root){animation-duration:.01ms!important}
+  ::view-transition-group(root),::view-transition-old(root),::view-transition-new(root){animation:none!important}
 }
+
 
 /* Contraste entre pasos y opciones en modo oscuro */
 .theme-dark .price-section{background:#262f28}

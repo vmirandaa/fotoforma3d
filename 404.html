@@ -26,6 +26,8 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;1,9..144,400;1,9..144,500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body id="top" class="error-page">
+  <!-- Aplica el modo oscuro antes de dibujar la página, para que no se vea un destello claro al abrirla (script.js lo mantiene después). -->
+  <script>(function () { var saved = null; try { saved = localStorage.getItem('forma-theme'); } catch (e) {} if (saved === 'dark' || (saved !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches)) { document.body.classList.add('theme-dark'); var meta = document.querySelector('meta[name=theme-color]'); if (meta) meta.content = '#171b18'; } })();</script>
 
   <div class="topline"><span>FORMA · FIGURAS 3D DE MASCOTAS</span></div>
   <header class="header">

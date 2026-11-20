@@ -26,6 +26,8 @@
   <link rel="stylesheet" href="sitio.css">
 </head>
 <body id="top">
+  <!-- Aplica el modo oscuro antes de dibujar la página, para que no se vea un destello claro al abrirla (script.js lo mantiene después). -->
+  <script>(function () { var saved = null; try { saved = localStorage.getItem('forma-theme'); } catch (e) {} if (saved === 'dark' || (saved !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches)) { document.body.classList.add('theme-dark'); var meta = document.querySelector('meta[name=theme-color]'); if (meta) meta.content = '#171b18'; } })();</script>
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
     <symbol id="pet-shape" viewBox="0 0 120 150">
       <ellipse class="pet-base" cx="60" cy="141" rx="38" ry="6"/>

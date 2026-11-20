@@ -27,6 +27,8 @@
   <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.4.0/model-viewer.min.js"></script>
 </head>
 <body id="top" class="studio-page">
+  <!-- Aplica el modo oscuro antes de dibujar la página, para que no se vea un destello claro al abrirla (script.js lo mantiene después). -->
+  <script>(function () { var saved = null; try { saved = localStorage.getItem('forma-theme'); } catch (e) {} if (saved === 'dark' || (saved !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches)) { document.body.classList.add('theme-dark'); var meta = document.querySelector('meta[name=theme-color]'); if (meta) meta.content = '#171b18'; } })();</script>
   <div class="topline"><span>FORMA · FIGURAS 3D DE MASCOTAS</span></div>
   <header class="header">
     <a class="wordmark" href="index.html" aria-label="FORMA, inicio"><span class="brand-symbol">F</span>FORMA<span class="wordmark-dot">.</span></a>

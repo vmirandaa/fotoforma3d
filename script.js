@@ -5,6 +5,9 @@ const themeLabel = document.querySelector('#theme-label');
 
 function setTheme(isDark, savePreference = false) {
   document.body.classList.toggle('theme-dark', isDark);
+  // La barra del navegador en el celular toma el color de fondo del modo elegido.
+  const themeColor = document.querySelector('meta[name="theme-color"]');
+  if (themeColor) themeColor.content = isDark ? '#171b18' : '#f6f4ee';
   themeButton.setAttribute('aria-pressed', String(isDark));
   themeLabel.textContent = isDark ? 'Modo claro' : 'Modo oscuro';
   if (savePreference) {
