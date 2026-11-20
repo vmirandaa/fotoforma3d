@@ -837,3 +837,11 @@ h1 em, h2 em { font-family: var(--heading); font-style: italic; font-weight: 400
   .theme-dark .studio-tabs { background: #171b18; border-color: #39433b; }
   .theme-dark .studio-tab.active > span:first-child, .theme-dark .studio-tab.active strong { color: #14201a; }
 }
+
+/* Zona de subida: en pantallas táctiles no se puede arrastrar, así que se invita a tocar */
+.upload-zone .con-dedo { display: none; }
+@media (hover: none) and (pointer: coarse) {
+  .upload-zone .con-mouse { display: none; }
+  .upload-zone .con-dedo { display: block; }
+}
+.upload-zone .upload-limit { left: 12px; right: 12px; text-align: center; line-height: 1.4; }
