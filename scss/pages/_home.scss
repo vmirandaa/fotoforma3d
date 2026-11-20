@@ -1,0 +1,372 @@
+// Portada (index.html): un recorrido en tres etapas reales (sus fotos, su figura, su tamaño).
+
+@use '../mixins' as *;
+
+// --- Inicio: el título a la izquierda; a la derecha, la foto real y la figura 3D que salió de ella ---
+.hero {
+  padding-block: var(--space-2xl);
+  min-height: min(calc(100dvh - var(--nav-height)), 980px);
+  display: grid;
+  align-items: center;
+}
+.hero-inner {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: var(--space-3xl);
+  align-items: end;
+}
+// El texto se apoya en la misma base que la foto y la figura.
+.hero-copy {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  padding-bottom: var(--space-xl);
+  h1 { max-width: none; }
+}
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-sm) var(--space-lg);
+  margin-top: var(--space-xs);
+}
+.hero-visual {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--space-lg);
+  align-items: start;
+}
+.hero-pair {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  figcaption { font-size: var(--text-sm); color: var(--color-muted); }
+}
+.hero-frame {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 3 / 5;
+  border-radius: var(--radius-card);
+  outline: var(--rule-hair) solid color-mix(in oklab, var(--color-ink) 8%, transparent);
+  outline-offset: -1px;
+  > img { object-position: 50% 62%; }
+}
+.hero-stage { background: var(--color-stage); color: var(--color-ink); }
+// Imagen fija de la figura: se ve mientras carga el visor, y queda si el visor o el modelo no cargan.
+.hero-poster {
+  position: absolute;
+  inset: var(--space-lg);
+  width: calc(100% - 2 * var(--space-lg));
+  height: calc(100% - 2 * var(--space-lg));
+  object-fit: contain;
+  transition: opacity var(--dur-long) var(--ease-out);
+}
+.hero-visual.con-figura .hero-poster { opacity: 0; }
+.hero-model {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity var(--dur-long) var(--ease-out);
+  model-viewer { width: 100%; height: 100%; --poster-color: transparent; }
+  model-viewer:focus-visible, model-viewer:focus-within { outline: 2px solid var(--color-focus); outline-offset: -4px; }
+}
+.hero-visual.con-figura .hero-model { opacity: 1; }
+
+// --- Cómo funciona: una franja con los tres pasos reales, numerados ---
+.how-section {
+  background: var(--color-paper-2);
+  color: var(--color-ink);
+  padding-block: var(--section-gap-s);
+}
+.how-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 6fr) minmax(0, 6fr);
+  gap: var(--space-lg) var(--gap-columns);
+  align-items: end;
+  margin-bottom: var(--space-2xl);
+}
+.how-steps {
+  list-style: none;
+  counter-reset: paso;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--gap-columns);
+  li {
+    counter-increment: paso;
+    padding-top: var(--space-lg);
+    border-top: var(--rule-hair) solid var(--color-edge);
+  }
+  li::before {
+    content: counter(paso);
+    display: block;
+    font-family: var(--font-display);
+    font-weight: var(--display-weight);
+    font-size: var(--text-display-s);
+    line-height: 1;
+    color: var(--color-ink);
+    margin-bottom: var(--space-lg);
+    font-variant-numeric: tabular-nums;
+  }
+  article { display: flex; flex-direction: column; gap: var(--space-sm); }
+  p { color: var(--color-ink-2); max-width: 45ch; }
+}
+
+// --- Qué fotos sirven: el título a la izquierda y los tres consejos en filas ---
+.photos-section { padding-block: var(--section-gap); }
+.photos-inner {
+  display: grid;
+  grid-template-columns: minmax(0, 4fr) minmax(0, 8fr);
+  gap: var(--space-2xl) var(--gap-columns);
+  align-items: start;
+}
+.photos-section .section-intro {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  position: sticky;
+  top: calc(var(--nav-height) + var(--space-xl));
+}
+.tip-grid {
+  display: flex;
+  flex-direction: column;
+  .offer {
+    display: grid;
+    grid-template-columns: minmax(0, 3fr) minmax(0, 4fr);
+    gap: var(--space-sm) var(--gap-columns);
+    padding-block: var(--space-xl);
+    border-top: var(--rule-hair) solid var(--color-rule);
+    p { color: var(--color-ink-2); }
+  }
+  .offer:first-child { border-top-color: var(--color-edge); padding-top: var(--space-lg); }
+}
+.fine-print { font-size: var(--text-sm); color: var(--color-muted); max-width: 65ch; }
+.tip-grid .fine-print { padding-top: var(--space-lg); border-top: var(--rule-hair) solid var(--color-rule); }
+
+// --- Tamaños y precios: las tallas como lista de precios, junto al diagrama a escala ---
+.price-section {
+  background: var(--color-paper-2);
+  color: var(--color-ink);
+  padding-block: var(--section-gap-s);
+}
+.price-section .section-intro {
+  display: grid;
+  grid-template-columns: minmax(0, 6fr) minmax(0, 6fr);
+  gap: var(--space-lg) var(--gap-columns);
+  align-items: end;
+  margin-bottom: var(--space-2xl);
+}
+.price-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  gap: var(--space-2xl) var(--gap-columns);
+  align-items: stretch;
+}
+.size-grid { display: flex; flex-direction: column; border-top: var(--rule-hair) solid var(--color-edge); }
+.size-fallback { padding-block: var(--space-lg); color: var(--color-muted); a { font-weight: 600; } }
+.size-card {
+  display: grid;
+  grid-template-columns: minmax(0, 7rem) minmax(0, 1fr) auto;
+  grid-template-areas: "medida nombre precio" "medida texto pintada";
+  gap: var(--space-2xs) var(--space-lg);
+  align-items: baseline;
+  padding-block: var(--space-lg);
+  border-bottom: var(--rule-hair) solid var(--color-rule);
+  .size-measure {
+    grid-area: medida;
+    font-family: var(--font-display);
+    font-weight: var(--display-weight);
+    font-size: var(--text-2xl);
+    line-height: 1;
+    letter-spacing: var(--tracking-display);
+    white-space: nowrap;
+  }
+  .size-name { grid-area: nombre; font-weight: 600; }
+  p { grid-area: texto; color: var(--color-ink-2); font-size: var(--text-sm); }
+  .size-price { grid-area: precio; justify-self: end; font-weight: 600; font-size: var(--text-lg); font-variant-numeric: tabular-nums; }
+  .size-painted { grid-area: pintada; justify-self: end; font-size: var(--text-sm); color: var(--color-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .size-tag { grid-area: nombre; justify-self: end; font-size: var(--text-sm); color: var(--color-accent); font-weight: 600; }
+}
+.size-card.featured .size-measure { color: var(--color-accent); }
+.price-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-lg);
+  margin-top: var(--space-2xl);
+}
+.price-cta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-sm) var(--space-lg);
+  > span { font-size: var(--text-sm); color: var(--color-muted); }
+}
+
+// Diagrama a escala: las tallas junto a una taza de café (js/main.js lo dibuja con las medidas del catálogo).
+.size-compare {
+  container-type: inline-size;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: var(--space-lg);
+  background: var(--color-stage);
+  color: var(--color-ink);
+  border-radius: var(--radius-card);
+  // Sobre el fondo verde, los textos secundarios usan el tono oscuro para mantener el contraste.
+  --color-muted: var(--color-ink-2);
+  --color-edge: var(--color-ink-2);
+  figcaption { margin-top: var(--space-sm); font-size: var(--text-sm); color: var(--color-muted); }
+}
+.compare-stage {
+  --cm: clamp(5.5px, (100cqw - 90px) / 47, 15px);
+  --label: 44px;
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: var(--space-md);
+  padding: var(--space-sm) 0 0 var(--space-xl);
+  min-height: calc(var(--max-cm, 16) * var(--cm) + var(--label) + var(--space-sm));
+}
+.compare-stage::after {
+  content: "";
+  position: absolute;
+  left: var(--space-xl);
+  right: 0;
+  bottom: var(--label);
+  height: 2px;
+  background: var(--color-ink-2);
+}
+.compare-ruler {
+  position: absolute;
+  left: 0;
+  bottom: var(--label);
+  width: var(--space-lg);
+  height: calc(var(--max-cm, 16) * var(--cm));
+  border-right: var(--rule-hair) solid var(--color-edge);
+  background: repeating-linear-gradient(to top, var(--color-edge) 0 1px, transparent 1px var(--cm)) right bottom / 6px 100% no-repeat;
+  span {
+    position: absolute;
+    right: var(--space-sm);
+    bottom: calc(var(--at) * var(--cm) - 7px);
+    font-size: var(--text-xs);
+    line-height: 1;
+    color: var(--color-muted);
+    font-variant-numeric: tabular-nums;
+  }
+}
+.compare-item { display: flex; flex-direction: column; align-items: center; }
+.compare-art { display: block; height: calc(var(--h) * var(--cm)); width: auto; overflow: visible; }
+// La figura real en blanco, recortada a su alto exacto
+.compare-figure { aspect-ratio: 191 / 480; max-width: none; filter: drop-shadow(0 2px 3px var(--color-figure-shadow)); }
+.compare-mug { aspect-ratio: 112 / 100; fill: var(--color-paper-2); stroke: var(--color-paper-2); .mug-shine { stroke: var(--color-stage); } }
+.compare-label {
+  height: var(--label);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  font-size: var(--text-xs);
+  color: var(--color-muted);
+  white-space: nowrap;
+  line-height: 1.3;
+  font-variant-numeric: tabular-nums;
+  strong { font-size: var(--text-sm); font-weight: 600; color: var(--color-ink); }
+}
+.compare-item.destacada .compare-label strong { color: var(--color-accent); }
+.compare-picker, .size-compare .solo-celular { display: none; }
+
+// --- Preguntas frecuentes: el título a la izquierda, las preguntas en filas ---
+.faq-section { padding-block: var(--section-gap); }
+.faq-inner {
+  display: grid;
+  grid-template-columns: minmax(0, 4fr) minmax(0, 8fr);
+  gap: var(--space-2xl) var(--gap-columns);
+  align-items: start;
+}
+.faq-intro {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-lg);
+  p { color: var(--color-ink-2); max-width: 32ch; }
+}
+.faq-list {
+  border-top: var(--rule-hair) solid var(--color-edge);
+  details { border-bottom: var(--rule-hair) solid var(--color-rule); }
+  summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-lg);
+    min-height: 72px;
+    padding-block: var(--space-md);
+    font-family: var(--font-display);
+    font-weight: var(--display-weight);
+    font-size: var(--text-title);
+    letter-spacing: -0.01em;
+    cursor: pointer;
+    list-style: none;
+    &::-webkit-details-marker { display: none; }
+    &:hover { color: var(--color-accent); }
+    span { flex-shrink: 0; font-family: var(--font-body); font-size: var(--text-xl); color: var(--color-accent); transition: transform var(--dur-short) var(--ease-out); }
+  }
+  details[open] summary span { transform: rotate(45deg); }
+  details p { padding-bottom: var(--space-lg); color: var(--color-ink-2); max-width: 62ch; }
+}
+
+// --- Entrada suave al bajar (js/main.js agrega .revelar; sin script, todo queda visible) ---
+.js .revelar { opacity: 0; transform: translateY(16px); transition: opacity 0.6s var(--ease-out), transform 0.6s var(--ease-out); transition-delay: var(--reveal-delay, 0ms); }
+.js .revelar.visible { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) { .js .revelar { opacity: 1; transform: none; } }
+
+// --- Pantallas medianas y chicas ---
+@media (max-width: 60rem) {
+  .hero { min-height: 0; padding-block: var(--space-xl) var(--space-2xl); }
+  .hero-inner { grid-template-columns: minmax(0, 1fr); gap: var(--space-xl); }
+  .how-heading, .price-section .section-intro { grid-template-columns: minmax(0, 1fr); }
+  .how-steps { grid-template-columns: minmax(0, 1fr); }
+  .photos-inner, .faq-inner, .price-layout { grid-template-columns: minmax(0, 1fr); }
+  .photos-section .section-intro { position: static; }
+}
+@include celular {
+  .tip-grid .offer { grid-template-columns: minmax(0, 1fr); }
+  .size-card {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "medida precio" "nombre nombre" "texto texto" "pintada pintada";
+    row-gap: var(--space-xs);
+    .size-measure { font-size: var(--text-xl); }
+    .size-painted { justify-self: start; }
+  }
+  .size-compare { padding: var(--space-md) var(--space-sm); }
+  .size-compare .solo-computador { display: none; }
+  .size-compare .solo-celular { display: inline; }
+  .compare-picker {
+    display: flex;
+    gap: var(--space-2xs);
+    padding: var(--space-2xs);
+    margin: 0 auto var(--space-xs);
+    width: max-content;
+    border-radius: var(--radius-pill);
+    background: var(--color-paper-2);
+    border: var(--rule-hair) solid var(--color-rule);
+    button {
+      min-width: 52px;
+      min-height: 40px;
+      border: 0;
+      border-radius: var(--radius-pill);
+      background: transparent;
+      color: var(--color-ink-2);
+      font-weight: 600;
+      font-size: var(--text-sm);
+      &:hover { color: var(--color-ink); }
+      &:active { transform: translateY(1px); }
+      &[aria-pressed="true"] { background: var(--color-accent); color: var(--color-accent-ink); }
+    }
+  }
+  .compare-stage { --cm: clamp(6px, (100cqw - 76px) / 22.5, 15px); gap: var(--space-xl); }
+  .compare-item:not(.referencia):not(.elegida) { display: none; }
+  .faq-list summary { font-size: var(--text-lg); }
+  .footer { padding-bottom: calc(var(--space-3xl) + var(--space-xl)); }
+}

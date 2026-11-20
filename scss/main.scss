@@ -1,24 +1,28 @@
+/* Hallmark · shape: Narrative Workflow (portada) · app screen (creador, Mi pedido, panel) · genre: editorial · theme: brand · redesign: full · job: buy
+ * paper: oklch(96.7% 0.008 91) · accent: oklch(49.9% 0.044 148) · display: Fraunces · body: DM Sans · hero: Stage (/) · nav: edge-aligned, the wordmark and the job's action · footer: mast · signature: the real corgi photo beside the 3D figure made from it
+ * axes: light/roman-serif/chromatic-green · posture: restrained · modes: light+dark · imagery: the user's sample figure (GLB) and one CC0 photo from Wikimedia Commons · contrast: pass · fold: pass · v2.0.0 */
+/* Hallmark · pre-emit critique: P4 H4 E4 S5 R4 V4 · weakest: P, a shop page argues little; led with the honest proof (the real photo and the figure made from it) instead of a drawing */
+/* Hallmark · dropped .ticker, .topline · gate 66 names the caps strip under the hero; its facts already sit in the hero, the steps and the footer line */
+/* Hallmark · answered F4 · the sticky bar repeats the hero action on phones only, and the size picker fill marks the selected size, not a second action */
+/* Hallmark · dropped "VISTA PREVIA GRATIS" sticker and hero 01 02 03 meta row · gates 54 and 66; the free preview is in the lead, the three stages in the steps section */
+/* Hallmark · dropped "La vista previa no tiene costo." beside the price action · 69 names it; the free preview is already in the hero lead and the FAQ */
+/* Hallmark · dismissed 25 · .faq-intro p and .model-placeholder p are one-sentence captions beside a list or a stage, not prose */
+/* Hallmark · dismissed F7 · inputs share one field recipe on purpose (one form language across the site); pills mark segmented controls and the size picker, which are controls */
+/* Hallmark · answered F15 · below the hero every grid uses --gap-columns; the 96px is the hero itself and the 24px and 64px are flex rows (price foot, view layout), not columns */
+/* Hallmark · dropped pet-shape · gate 80 names the drawn pet; the size comparator now shows the real figure's silhouette */
+/* Hallmark · 404 verified by hand: its dynamic base cannot be linted from disk and the server answers it with HTTP 404 */
+/* Hallmark · finish-review: subagent · verdict fix · 8 findings, 8 resolved (poster fallback, accent fill on selected segments, one counter on phones, real figure silhouette, echo cut, price box stretched, account card full width, light mode and admin at 375 checked) */
+
 // FORMA · estilos del sitio.
 // Este archivo une las partes en el orden en que se aplican: cada una puede ajustar a las anteriores.
 // Para generar css/main.css: npm run build:css (una vez) o npm run watch:css (se regenera al guardar).
 
-/* FORMA · hoja de estilos generada desde scss/main.scss con Sass. No la edites a mano: cambia los archivos de scss/ y ejecuta npm run build:css. */
-
-@use 'base'; // Base: colores, cabecera, portada, secciones y pie
-@use 'creator'; // Creador: encabezado, formulario y visor
-@use 'typography'; // Escala de letra
-@use 'creator-tabs'; // Creador: pestañas y distribución de los pasos
-@use 'pets'; // Mascotas: dibujo, tallas, consejos y lista de fotos
-@use 'admin'; // Panel de reservas (admin.html)
-@use 'order-tracking'; // Mi pedido (ingresar.html)
-@use 'theme'; // Tema: tipografía Fraunces, botones en píldora y modo oscuro verde
-@use 'mobile'; // Celular: tamaños mínimos de letra y campos (va al final para tener prioridad)
-@use 'size-compare'; // Comparador de tamaños (portada, sección de precios)
-@use 'loading'; // Creador: pantalla de espera mientras se genera la vista previa
-@use 'finish-options'; // Creador: acabado (en blanco o pintada por el taller) y total de la reserva
-@use 'creator-steps'; // Creador por pasos en celular (js/creator.js agrega la clase .wizard bajo 700 px)
-@use 'error-page'; // Página no encontrada (404.html)
-@use 'overrides'; // Retoques posteriores (portada, celular, panel y modo oscuro)
-@use 'angle-upload'; // Creador: subida por ángulos (frente, costados y espalda)
-@use 'order-extras'; // Creador: extras del pedido (formato, estilo, base y cantidad)
-@use 'spam-protection'; // Protección contra envíos automáticos (campo trampa del creador)
+@use 'tokens';
+@use 'base';
+@use 'components';
+@use 'forms';
+@use 'pages/home';
+@use 'pages/creator';
+@use 'pages/account';
+@use 'pages/admin';
+@use 'pages/error';

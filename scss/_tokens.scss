@@ -1,0 +1,116 @@
+// Tokens del sistema de FORMA. Todo color y toda familia tipográfica del sitio pasa por aquí.
+// Escala de espacios, tipos, movimiento y capas: la del andamiaje de Hallmark. Colores y fuentes: los de la marca.
+
+:root {
+  color-scheme: light;
+
+  // Espacios (escala de 4 px)
+  --space-3xs: 2px; --space-2xs: 4px; --space-xs: 8px; --space-sm: 12px; --space-md: 16px;
+  --space-lg: 24px; --space-xl: 40px; --space-2xl: 64px; --space-3xl: 96px; --space-4xl: 144px;
+
+  // Tipos (razón 1,25 desde 16 px)
+  --text-xs: 0.8125rem; --text-sm: 0.875rem; --text-md: 1rem; --text-lg: 1.25rem; --text-xl: 1.5625rem;
+  --text-2xl: 1.953rem; --text-3xl: 2.441rem;
+  --text-display-s: clamp(2.25rem, 4vw + 0.5rem, 3.75rem);
+  --text-display: clamp(2.75rem, 5vw + 1rem, 5.25rem);
+  --text-section: clamp(2rem, 2.5vw + 1rem, 3.5rem);
+  --text-title: clamp(1.25rem, 0.75vw + 0.875rem, 1.625rem);
+  --text-lead: clamp(1.125rem, 0.35vw + 1rem, 1.375rem);
+  --tracking-display: -0.02em;
+  --display-weight: 500;
+
+  // Movimiento
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1); --ease-in: cubic-bezier(0.7, 0, 0.84, 0); --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-micro: 120ms; --dur-short: 220ms; --dur-long: 420ms;
+
+  // Lienzo
+  --container: 1440px; --gutter: 64px; --gap-columns: 32px;
+  --section-gap-s: 120px; --section-gap: 144px; --section-gap-l: 176px;
+  --nav-height: 72px;
+
+  // Capas
+  --z-base: 1; --z-raised: 10; --z-dropdown: 100; --z-sticky: 200; --z-sticky-nav: 300; --z-modal: 400; --z-toast: 500; --z-tooltip: 600;
+
+  // Forma
+  --radius-card: 16px; --radius-field: 12px; --radius-pill: 999px; --rule-hair: 1px;
+  --shadow-card: 0 1px 2px oklch(20% 0.01 148 / 0.06);
+
+  // Familias: Fraunces para títulos, DM Sans para el texto; Manrope solo en el logo.
+  --font-display: "Fraunces", Georgia, ui-serif, serif;
+  --font-body: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-outlier: "Manrope", "DM Sans", ui-sans-serif, sans-serif;
+
+  // Colores, modo claro (los de la marca, pasados a OKLCH)
+  --color-paper: oklch(96.7% 0.008 91);
+  --color-paper-2: oklch(94.4% 0.012 110);
+  --color-paper-3: oklch(92.4% 0.018 124);
+  --color-surface: oklch(99.1% 0.005 95);
+  --color-ink: oklch(27.3% 0.015 137);
+  --color-ink-2: oklch(38% 0.016 140);
+  --color-muted: oklch(49.5% 0.016 140);
+  --color-rule: oklch(88.5% 0.012 110);
+  --color-edge: oklch(62% 0.016 140);
+  --color-accent: oklch(49.9% 0.044 148);
+  --color-accent-strong: oklch(44% 0.046 148);
+  --color-accent-ink: oklch(99.1% 0.005 95);
+  --color-accent-soft: oklch(88.7% 0.025 124);
+  --color-focus: oklch(50% 0.13 148);
+  --color-field: oklch(36.7% 0.039 150);
+  --color-field-ink: oklch(96% 0.01 120);
+  --color-field-muted: oklch(82% 0.03 125);
+  --color-highlight: oklch(83.9% 0.084 121);
+  --color-stage: oklch(74% 0.036 132);
+  --color-error: oklch(48% 0.15 30);
+  --color-error-soft: oklch(93% 0.03 40);
+  --color-success: oklch(45% 0.1 150);
+  --color-scrim: oklch(20% 0.02 150 / 0.55);
+  --color-figure-shadow: oklch(20% 0.02 150 / 0.18);
+  // Etapas de una reserva (panel)
+  --color-st-nueva: oklch(62% 0.12 45);
+  --color-st-contactada: oklch(56% 0.1 250);
+  --color-st-pagada: oklch(52% 0.11 150);
+  --color-st-enviada: oklch(55% 0.02 140);
+  --color-st-cancelada: oklch(74% 0.01 110);
+}
+
+// Modo oscuro: derivado, nunca invertido. Mismo matiz verde; js/main.js marca la raíz con data-mode="dark".
+:root[data-mode="dark"] {
+  color-scheme: dark;
+  --color-paper: oklch(21.7% 0.008 153);
+  --color-paper-2: oklch(24.6% 0.012 152);
+  --color-paper-3: oklch(28.6% 0.018 152);
+  --color-surface: oklch(26.1% 0.013 150);
+  --color-ink: oklch(95.5% 0.007 152);
+  --color-ink-2: oklch(86% 0.012 152);
+  --color-muted: oklch(77.8% 0.018 151);
+  --color-rule: oklch(36% 0.019 151);
+  --color-edge: oklch(56% 0.02 151);
+  --color-accent: oklch(76.2% 0.072 150);
+  --color-accent-strong: oklch(82% 0.07 150);
+  --color-accent-ink: oklch(21% 0.02 150);
+  --color-accent-soft: oklch(33% 0.03 150);
+  --color-focus: oklch(80% 0.12 150);
+  --color-field: oklch(28.4% 0.022 150);
+  --color-field-ink: oklch(95.5% 0.007 152);
+  --color-field-muted: oklch(80% 0.02 151);
+  --color-highlight: oklch(89.8% 0.038 151);
+  --color-stage: oklch(33% 0.025 150);
+  --color-error: oklch(78% 0.11 40);
+  --color-error-soft: oklch(30% 0.04 35);
+  --color-success: oklch(78% 0.1 150);
+  --color-scrim: oklch(12% 0.01 150 / 0.6);
+  --color-figure-shadow: oklch(10% 0.01 150 / 0.4);
+  --color-st-nueva: oklch(76% 0.11 50);
+  --color-st-contactada: oklch(76% 0.08 250);
+  --color-st-pagada: oklch(78% 0.1 150);
+  --color-st-enviada: oklch(74% 0.02 150);
+  --color-st-cancelada: oklch(50% 0.015 150);
+  --shadow-card: none;
+}
+
+@media (max-width: 60rem) {
+  :root { --gutter: 24px; --section-gap-s: 80px; --section-gap: 96px; --section-gap-l: 120px; --nav-height: 64px; }
+}
+@media (max-width: 40rem) {
+  :root { --gutter: 16px; --section-gap-s: 56px; --section-gap: 72px; --section-gap-l: 96px; --gap-columns: 16px; }
+}

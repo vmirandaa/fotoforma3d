@@ -5,6 +5,8 @@ const themeLabel = document.querySelector('#theme-label');
 
 function setTheme(isDark, savePreference = false) {
   document.body.classList.toggle('theme-dark', isDark);
+  // El sistema de colores lee el modo desde la raíz (:root[data-mode]); la clase del body queda por compatibilidad.
+  document.documentElement.dataset.mode = isDark ? 'dark' : 'light';
   // La barra del navegador en el celular toma el color de fondo del modo elegido.
   const themeColor = document.querySelector('meta[name="theme-color"]');
   if (themeColor) themeColor.content = isDark ? '#171b18' : '#f6f4ee';
@@ -50,7 +52,7 @@ if (sizeGrid) {
       card.className = 'size-card' + (size.destacada ? ' featured' : '');
       const name = document.createElement('span');
       name.className = 'size-name';
-      name.textContent = size.nombre.toUpperCase();
+      name.textContent = size.nombre;
       const measure = document.createElement('div');
       measure.className = 'size-measure';
       measure.textContent = size.medida;
@@ -69,7 +71,7 @@ if (sizeGrid) {
       if (size.destacada) {
         const tag = document.createElement('span');
         tag.className = 'size-tag';
-        tag.textContent = 'RECOMENDADA';
+        tag.textContent = 'Recomendada';
         card.append(tag);
       }
       sizeGrid.append(card);
@@ -123,13 +125,13 @@ function buildSizeCompare(sizes) {
     stage.append(item);
   };
   items.forEach(({ size, cm }) => {
-    const art = document.createElementNS(svgNS, 'svg');
-    art.setAttribute('viewBox', '0 0 120 150');
-    art.setAttribute('class', 'compare-art pet-figure');
-    art.setAttribute('aria-hidden', 'true');
-    const use = document.createElementNS(svgNS, 'use');
-    use.setAttribute('href', '#pet-shape');
-    art.append(use);
+    // La silueta es un render real de la figura de muestra, recortado justo a su alto: así la escala en cm es exacta.
+    const art = document.createElement('img');
+    art.src = 'assets/images/figura-silueta.webp';
+    art.width = 191;
+    art.height = 480;
+    art.alt = '';
+    art.className = 'compare-art compare-figure';
     makeItem(cm, size.id, size.medida, art, size.destacada ? 'destacada' : '');
   });
   const mug = document.createElementNS(svgNS, 'svg');
@@ -178,8 +180,8 @@ nav.querySelectorAll('a').forEach((link) => link.addEventListener('click', () =>
   menuButton.setAttribute('aria-expanded', 'false');
 }));
 
-// Figura 3D de muestra en la portada. Si existe assets/models/sample-figure.glb se carga el visor y la figura
-// reemplaza a la ilustración; si no existe, la portada queda con la ilustración tal como está.
+// Figura 3D de muestra en la portada. Si existe assets/models/sample-figure.glb se carga el visor y la figura gira
+// sobre la imagen fija (assets/images/figura-muestra.webp); si el modelo o el visor no cargan, queda esa imagen.
 const heroModelSlot = document.querySelector('#hero-model');
 if (heroModelSlot) {
   const HERO_MODEL = 'assets/models/sample-figure.glb';

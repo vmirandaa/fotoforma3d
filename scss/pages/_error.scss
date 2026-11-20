@@ -1,0 +1,31 @@
+// Página no encontrada (404.html): la foto real a un lado y el camino de vuelta al otro.
+
+@use '../mixins' as *;
+
+.error-main { padding-block: var(--space-2xl) var(--space-3xl); }
+.error-inner {
+  display: grid;
+  grid-template-columns: minmax(0, 4fr) minmax(0, 7fr);
+  gap: var(--space-2xl) var(--space-3xl);
+  align-items: center;
+  min-height: calc(100dvh - var(--nav-height) - 2 * var(--space-2xl));
+}
+.error-art {
+  aspect-ratio: 3 / 4;
+  border-radius: var(--radius-card);
+  outline: var(--rule-hair) solid color-mix(in oklab, var(--color-ink) 8%, transparent);
+  outline-offset: -1px;
+  > img { object-position: 50% 60%; }
+}
+.error-copy {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  h1 { max-width: 12ch; }
+}
+.error-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-sm) var(--space-lg); margin-top: var(--space-xs); }
+
+@media (max-width: 60rem) {
+  .error-inner { grid-template-columns: minmax(0, 1fr); min-height: 0; }
+  .error-art { max-width: 20rem; }
+}

@@ -16,7 +16,8 @@ No pongas la clave dentro de los archivos HTML o JavaScript del navegador ni la 
 
 - `index.html`, `crear.html`, `ingresar.html` (Mi pedido), `admin.html` y `404.html`: las páginas. Sus nombres quedan en español porque son las direcciones que ven los clientes.
 - `css/main.css`: la hoja de estilos que usan las páginas. Se genera desde `scss/`.
-- `scss/`: los estilos por tema; `main.scss` los une y `_mixins.scss` trae atajos.
+- `scss/`: los estilos. `_tokens.scss` (colores, tipos y espacios), `_base.scss`, `_components.scss` (barra, botones, pie), `_forms.scss` y una parte por página en `scss/pages/`; `main.scss` los une y `_mixins.scss` trae atajos.
+- `design.md`: el sistema de diseño fijo (colores, tipos, controles y reglas). Léelo antes de cambiar el diseño.
 - `js/`: `main.js` (común a todas las páginas: tema, menú, catálogo), `creator.js` (creador), `account.js` (Mi pedido e ingreso) y `admin.js` (panel).
 - `data/catalog.json`: tallas, precios y extras.
 - `assets/`: imágenes (`images/`) y el modelo de muestra de la portada (`models/`).
@@ -92,7 +93,7 @@ El envío usa el paquete `nodemailer`: ejecuta `npm install` una vez antes de `n
 
 ## Estilos (Sass)
 
-Los estilos se escriben en la carpeta `scss/`, separados por tema (`_base.scss`, `_creator.scss`, `_admin.scss`, `_mobile.scss`…). `scss/main.scss` los une en el orden en que se aplican: cada parte puede ajustar a las anteriores. Con Sass se genera `css/main.css`, la hoja que leen todas las páginas y GitHub Pages.
+Los estilos se escriben en la carpeta `scss/`, separados por tema: los tokens (`_tokens.scss`), la base, los componentes y formularios compartidos, y una parte por página en `scss/pages/` (`_home.scss`, `_creator.scss`, `_account.scss`, `_admin.scss`, `_error.scss`). `scss/main.scss` los une en el orden en que se aplican: cada parte puede ajustar a las anteriores. Con Sass se genera `css/main.css`, la hoja que leen todas las páginas y GitHub Pages.
 
 - Ejecuta `npm install` una vez (instala Sass, además de lo del servidor).
 - Después de cambiar algo en `scss/`, ejecuta `npm run build:css` para regenerar `css/main.css`.
@@ -100,6 +101,6 @@ Los estilos se escriben en la carpeta `scss/`, separados por tema (`_base.scss`,
 - No edites `css/main.css` a mano: se reemplaza al regenerarlo.
 - Antes de subir a GitHub, regenera `css/main.css` y súbelo junto con los cambios de `scss/`: GitHub Pages publica el `.css`, no compila el `.scss`.
 
-`scss/_mixins.scss` trae atajos para escribir estilos nuevos: `@include celular { … }`, `@include computador { … }`, `@include oscuro { … }` y `@include con-movimiento { … }`. Para usarlos, agrega `@use 'mixins' as *;` al principio del archivo. Los colores siguen siendo variables de CSS (`var(--green)`, `var(--soft)`…), porque cambian solas en modo oscuro.
+`scss/_mixins.scss` trae atajos para escribir estilos nuevos: `@include celular { … }`, `@include computador { … }`, `@include oscuro { … }` y `@include con-movimiento { … }`. Para usarlos, agrega `@use 'mixins' as *;` al principio del archivo. Los colores son variables de CSS definidas en `_tokens.scss` (`var(--color-accent)`, `var(--color-paper-2)`…), porque cambian solas en modo oscuro; no escribas colores sueltos fuera de ese archivo.
 
 Las vistas previas en curso se mantienen en memoria, así que se pierden al reiniciar el servidor; las reservas ya registradas no.

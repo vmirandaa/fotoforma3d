@@ -78,7 +78,7 @@ function showState(message, kind) {
   stateBox.className = 'generation-state' + (kind ? ' ' + kind : '');
 }
 function setModelState(message, ready) {
-  modelState.replaceChildren(document.createElement('i'), ' ' + message);
+  modelState.textContent = message;
   modelState.classList.toggle('ready', Boolean(ready));
 }
 function setOrderStatus(message, kind) {
@@ -385,7 +385,7 @@ const wizardHead = document.createElement('div');
 wizardHead.className = 'wizard-head';
 const wizardNav = document.createElement('div');
 wizardNav.className = 'wizard-nav';
-const wizardBack = Object.assign(document.createElement('button'), { type: 'button', className: 'wizard-back', textContent: '← Atrás' });
+const wizardBack = Object.assign(document.createElement('button'), { type: 'button', className: 'wizard-back', textContent: 'Atrás' });
 const wizardNext = Object.assign(document.createElement('button'), { type: 'button', className: 'button button-dark wizard-next' });
 const wizardHint = Object.assign(document.createElement('p'), { className: 'wizard-hint' });
 wizardHint.setAttribute('role', 'status');
@@ -418,7 +418,7 @@ function renderWizard(scroll) {
   form.dataset.pasoActual = String(wizardStep);
   wizardHead.replaceChildren();
   const label = document.createElement('span');
-  label.textContent = 'Paso ' + wizardStep + ' de ' + WIZARD_STEPS.length;
+  label.textContent = 'Parte ' + wizardStep + ' de ' + WIZARD_STEPS.length + ' del paso 1';
   const title = document.createElement('strong');
   title.textContent = WIZARD_STEPS[wizardStep - 1].title;
   const dots = document.createElement('ol');
@@ -432,7 +432,7 @@ function renderWizard(scroll) {
   wizardHead.append(label, title, dots);
   wizardBack.hidden = wizardStep === 1;
   wizardNext.hidden = wizardStep === WIZARD_STEPS.length;
-  wizardNext.innerHTML = 'Siguiente: ' + WIZARD_STEPS[Math.min(wizardStep, WIZARD_STEPS.length - 1)].title.toLowerCase() + ' <span>→</span>';
+  wizardNext.innerHTML = 'Siguiente: ' + WIZARD_STEPS[Math.min(wizardStep, WIZARD_STEPS.length - 1)].title.toLowerCase();
   wizardHint.textContent = '';
   // Un aviso de éxito del paso anterior ("Foto lista.") ya no aporta al cambiar de paso.
   if (scroll && stateBox.classList.contains('success')) showState('');
@@ -556,7 +556,7 @@ function tickWait() {
   // Avance estimado: se acerca al 95 % sin llegar, porque el servicio no informa un porcentaje real.
   // Si el servicio informa su avance real (Tripo lo hace), se usa cuando va por delante de la estimación.
   const estimate = Math.max(4 + 91 * (1 - Math.exp(-elapsed / 150000)), Math.min(95, waitState.realProgress));
-  progressFill.style.width = estimate.toFixed(1) + '%';
+  progressFill.style.setProperty('--progreso', Number(estimate.toFixed(1)) / 100);
   const seconds = Math.floor(elapsed / 1000);
   if (seconds > 0 && seconds % 10 === 0) showWaitTip(waitState.tipIndex + 1);
 }
@@ -569,7 +569,7 @@ function startWaiting() {
   waitState.realProgress = 0;
   progressBox.hidden = false;
   progressBox.classList.remove('terminado', 'fallido');
-  progressFill.style.width = '4%';
+  progressFill.style.setProperty('--progreso', 0.04);
   progressTime.textContent = '0:00';
   showWaitTip(Math.floor(Math.random() * WAIT_TIPS.length));
   setWaitStep('send');
@@ -582,7 +582,7 @@ function stopWaiting(ok) {
   progressBox.classList.add(ok ? 'terminado' : 'fallido');
   if (ok) {
     waitSteps.querySelectorAll('li').forEach((item) => { item.classList.add('hecho'); item.classList.remove('actual'); });
-    progressFill.style.width = '100%';
+    progressFill.style.setProperty('--progreso', 1);
     progressText.textContent = 'La vista previa está lista.';
     // Si el cliente se fue a otra pestaña, el título le avisa que ya puede volver.
     if (document.hidden) document.title = '✓ Su figura está lista · FORMA';
@@ -628,8 +628,8 @@ async function runGeneration() {
   syncButtons();
   startWaiting();
   showState('');
-  setModelState('PREPARANDO LA FIGURA', false);
-  generateButton.innerHTML = 'Creando la vista previa… <span>◌</span>';
+  setModelState('Preparando la figura', false);
+  generateButton.textContent = 'Creando la vista previa…';
   const petName = petNameInput.value.trim();
   try {
     const payload = new FormData();
@@ -661,7 +661,7 @@ async function runGeneration() {
     // Cada pase sirve una vez: se pide otro para la siguiente vista previa.
     refreshPass();
     if (!response.ok) throw new Error(started.error || 'No se pudo iniciar la vista previa.');
-    setModelState('MODELANDO', false);
+    setModelState('Modelando', false);
     setWaitStep('queue');
     const completed = await pollTask(started.id);
     if (!completed.modelReady) throw new Error('La figura se generó, pero no se pudo preparar la vista previa.');
@@ -675,17 +675,17 @@ async function runGeneration() {
     modelStage.classList.add('ready');
     viewerHint.hidden = false;
     figureTitle.textContent = petName ? 'La figura de ' + petName : 'Su figura';
-    setModelState('VISTA PREVIA LISTA', true);
+    setModelState('Vista previa lista', true);
     stopWaiting(true);
     showState('Listo. Revisa la figura y, si te gusta, elige el tamaño.', 'success');
     setOrderStatus('Revisa el tamaño y completa tus datos para reservar.');
-    generateButton.innerHTML = 'Probar con otras fotos <span>↗</span>';
+    generateButton.textContent = 'Probar con otras fotos';
     setActiveTab('view');
   } catch (error) {
-    setModelState(hasGeneratedModel ? 'VISTA PREVIA ANTERIOR' : 'SIN FIGURA TODAVÍA', hasGeneratedModel);
+    setModelState(hasGeneratedModel ? 'Vista previa anterior' : 'Sin figura todavía', hasGeneratedModel);
     stopWaiting(false);
     showState(error.message || 'Ocurrió un error al crear la vista previa.');
-    generateButton.innerHTML = 'Intentar de nuevo <span>↗</span>';
+    generateButton.textContent = 'Intentar de nuevo';
   } finally {
     generationBusy = false;
     syncButtons();
@@ -744,7 +744,7 @@ function buildChoiceGroup(legend, name, options) {
     const strong = document.createElement('strong');
     strong.textContent = option.nombre;
     const small = document.createElement('small');
-    small.textContent = [option.detalle, priceLabel(option.precio)].filter(Boolean).join(' · ');
+    small.textContent = [option.detalle, priceLabel(option.precio)].filter(Boolean).join(', ');
     label.append(input, strong, small);
     group.append(label);
   });
@@ -818,7 +818,7 @@ function updateOrderTotal() {
   const canPaint = Boolean(size && Number(size.pintada) > 0);
   paintOption.hidden = !canPaint;
   if (!canPaint && selectedFinish() === 'pintada') orderForm.querySelector('input[name="finish"][value="blanco"]').checked = true;
-  paintPrice.textContent = canPaint ? '+' + formatPrice(size.pintada) + ' · por el taller' : 'por el taller';
+  paintPrice.textContent = canPaint ? '+' + formatPrice(size.pintada) + ', por el taller' : 'por el taller';
   const painted = canPaint && selectedFinish() === 'pintada';
   finishNote.hidden = !painted;
   const extras = selectedExtras();
@@ -853,7 +853,7 @@ catalogPromise.then((catalog) => {
     const measure = document.createElement('strong');
     measure.textContent = size.medida;
     const detail = document.createElement('small');
-    detail.textContent = size.nombre + ' · ' + formatPrice(size.precio);
+    detail.textContent = size.nombre + ', ' + formatPrice(size.precio);
     option.append(input, measure, detail);
     sizeOptions.append(option);
   });
@@ -887,7 +887,7 @@ orderForm.addEventListener('submit', async (event) => {
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || 'No se pudo registrar la reserva.');
     orderSent = true;
-    orderSubmit.innerHTML = 'Reserva enviada <span>✓</span>';
+    orderSubmit.textContent = 'Reserva enviada';
     setOrderStatus('Reserva ' + result.code + ' recibida. Te escribiremos a ' + email + ' para confirmar el pago y el envío.', 'success');
     const trackLink = document.createElement('a');
     trackLink.href = 'ingresar.html?codigo=' + encodeURIComponent(result.code);

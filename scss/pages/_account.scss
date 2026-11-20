@@ -1,0 +1,175 @@
+// Mi pedido (ingresar.html): el título a la izquierda y la herramienta (seguimiento o ingreso) a la derecha.
+
+@use '../mixins' as *;
+
+.cuenta-main { padding-block: var(--space-2xl) var(--space-3xl); }
+.cuenta-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: var(--space-2xl) var(--gap-columns);
+  align-items: start;
+}
+.cuenta-hero {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  position: sticky;
+  top: calc(var(--nav-height) + var(--space-xl));
+  h1 { font-size: var(--text-display-s); max-width: 14ch; }
+}
+.cuenta-body { display: flex; flex-direction: column; gap: var(--space-lg); min-width: 0; }
+
+// Pestañas: cliente o administrador
+.cuenta-tabs {
+  display: inline-grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  justify-self: start;
+  align-self: flex-start;
+  gap: var(--space-2xs);
+  padding: var(--space-2xs);
+  border: var(--rule-hair) solid var(--color-rule);
+  border-radius: var(--radius-pill);
+  background: var(--color-paper-2);
+}
+.cuenta-tab {
+  min-height: 40px;
+  padding: 0 var(--space-lg);
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--color-ink-2);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  white-space: nowrap;
+  &:hover { color: var(--color-ink); }
+  &:active { transform: translateY(1px); }
+  &[aria-selected="true"] { background: var(--color-accent); color: var(--color-accent-ink); }
+}
+.cuenta-panel[hidden] { display: none; }
+
+.cuenta-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  padding: var(--space-xl);
+  border-radius: var(--radius-card);
+  background: var(--color-paper-2);
+  color: var(--color-ink);
+  h2 { font-size: var(--text-xl); }
+  > p { color: var(--color-ink-2); }
+}
+.cuenta-form { .button { align-self: flex-start; } .field-block { max-width: 34rem; } }
+.cuenta-message {
+  font-size: var(--text-sm);
+  color: var(--color-ink-2);
+  &:empty { display: none; }
+  &.error { color: var(--color-error); }
+}
+.cuenta-sesion {
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-field);
+  background: var(--color-surface);
+  font-size: var(--text-sm);
+  a { font-weight: 600; }
+  &[hidden] { display: none; }
+}
+
+// Resultado del seguimiento
+.seguimiento[hidden] { display: none; }
+.seguimiento-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-xs) var(--space-lg);
+  h2 { font-size: var(--text-2xl); font-variant-numeric: tabular-nums; }
+  p { font-size: var(--text-sm); color: var(--color-muted); }
+}
+.seguimiento-cancelada {
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-field);
+  background: var(--color-error-soft);
+  color: var(--color-ink);
+  font-size: var(--text-sm);
+  &[hidden] { display: none; }
+}
+// La línea de etapas: recibida, contactada, pagada, enviada
+.seguimiento-pasos {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-md);
+  li {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    padding-top: var(--space-md);
+    border-top: 2px solid var(--color-rule);
+    color: var(--color-muted);
+    > span:last-child { display: flex; flex-direction: column; gap: var(--space-3xs); }
+    strong { font-weight: 600; color: var(--color-ink-2); }
+    small { font-size: var(--text-sm); line-height: 1.4; }
+  }
+  li.hecho { border-top-color: var(--color-accent); strong { color: var(--color-ink); } }
+  li.actual { border-top-color: var(--color-accent); color: var(--color-ink-2); strong { color: var(--color-ink); } }
+  &.cancelada li { opacity: 0.55; }
+}
+.paso-marca {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: var(--rule-hair) solid var(--color-edge);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  .hecho &, .actual & { background: var(--color-accent); border-color: var(--color-accent); color: var(--color-accent-ink); }
+}
+.seguimiento-actualizado { font-size: var(--text-sm); color: var(--color-muted); &:empty { display: none; } }
+.seguimiento-datos {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-md);
+  padding-top: var(--space-lg);
+  border-top: var(--rule-hair) solid var(--color-rule);
+  dt { font-size: var(--text-sm); color: var(--color-muted); }
+  dd { font-weight: 600; }
+}
+.seguimiento-figura { display: flex; flex-direction: column; gap: var(--space-md); align-items: flex-start; &[hidden] { display: none; } }
+.seguimiento-visor {
+  width: 100%;
+  height: 360px;
+  border-radius: var(--radius-card);
+  background: var(--color-stage);
+  overflow: hidden;
+  &[hidden] { display: none; }
+  model-viewer { width: 100%; height: 100%; --poster-color: transparent; }
+  model-viewer:focus-visible, model-viewer:focus-within { outline: 2px solid var(--color-focus); outline-offset: -4px; }
+}
+.seguimiento-ayuda { font-size: var(--text-sm); color: var(--color-ink-2); a { font-weight: 600; color: var(--color-ink); } }
+.cuenta-otra {
+  align-self: flex-start;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-ink);
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: var(--color-edge);
+  &:hover { text-decoration-color: currentColor; }
+}
+
+@media (max-width: 60rem) {
+  .cuenta-layout { grid-template-columns: minmax(0, 1fr); }
+  .cuenta-hero { position: static; h1 { max-width: none; } }
+}
+@include celular {
+  .cuenta-main { padding-block: var(--space-xl) var(--space-2xl); }
+  .cuenta-card { padding: var(--space-lg); }
+  .seguimiento-pasos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .seguimiento-datos { grid-template-columns: minmax(0, 1fr); }
+  .seguimiento-visor { height: 300px; }
+}

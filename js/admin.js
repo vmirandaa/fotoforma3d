@@ -166,7 +166,7 @@ function renderOrders(orders, states) {
     mail.href = 'mailto:' + order.email + '?subject=' + encodeURIComponent('Tu figura FORMA · reserva ' + order.code);
     card.append(
       field('Reserva', el('strong', order.code), el('small', when)),
-      field('Figura', el('strong', (Number(order.quantity) > 1 ? order.quantity + ' × ' : '') + order.measure + (order.finish === 'pintada' ? ' · pintada' : '') + ' · ' + formatPrice(order.price)), order.extrasText ? el('small', order.extrasText) : document.createTextNode(''), el('small', (order.petName || 'Sin nombre') + ' · ' + (SPECIES_LABELS[order.species] || order.species || ''))),
+      field('Figura', el('strong', (Number(order.quantity) > 1 ? order.quantity + ' × ' : '') + order.measure + (order.finish === 'pintada' ? ', pintada' : '') + ', ' + formatPrice(order.price)), order.extrasText ? el('small', order.extrasText) : document.createTextNode(''), el('small', (order.petName || 'Sin nombre') + ', ' + (SPECIES_LABELS[order.species] || order.species || '').toLowerCase())),
       field('Cliente', document.createTextNode(order.name), document.createElement('br'), mail)
     );
 
@@ -199,11 +199,11 @@ function renderOrders(orders, states) {
         setMessage(boardMessage, error.message, true);
       }
     });
-    const view = el('button', order.hasModel ? 'Ver en 3D ◈' : 'Sin copia del modelo');
+    const view = el('button', order.hasModel ? 'Ver en 3D' : 'Sin copia del modelo');
     view.type = 'button';
     view.disabled = !order.hasModel;
     view.addEventListener('click', () => openModel(order));
-    const download = el('button', 'Descargar modelo ↓');
+    const download = el('button', 'Descargar modelo');
     download.type = 'button';
     download.hidden = !order.hasModel;
     download.addEventListener('click', async () => {
@@ -273,7 +273,7 @@ function photoThumb(order, index) {
 function showPhoto() {
   const photo = photoOrder.photos[photoIndex];
   const label = photoLabel(photo);
-  photoTitle.textContent = (photoOrder.petName || 'Sin nombre') + ' · foto ' + (photoIndex + 1) + ' de ' + photoOrder.photos.length + (label ? ' · ' + label : '');
+  photoTitle.textContent = (photoOrder.petName || 'Sin nombre') + ', foto ' + (photoIndex + 1) + ' de ' + photoOrder.photos.length + (label ? ' (' + label.toLowerCase() + ')' : '');
   photoPrev.hidden = photoNext.hidden = photoOrder.photos.length < 2;
   photoImage.removeAttribute('src');
   const current = photo.file;
@@ -357,7 +357,7 @@ adminViewer.addEventListener('load', () => {
   });
   applyModelFinish(true);
   viewWhite.disabled = viewColor.disabled = false;
-  setModelStatus('Arrastra para girar · rueda para acercar');
+  setModelStatus('Arrastra para girarla. Con la rueda, acércala.');
 });
 adminViewer.addEventListener('error', () => {
   showViewer(false);
@@ -367,7 +367,7 @@ adminViewer.addEventListener('error', () => {
 async function openModel(order) {
   openCode = order.code;
   openMaterials = [];
-  modelTitle.textContent = (order.petName || 'Sin nombre') + ' · ' + order.measure + ' · ' + order.code;
+  modelTitle.textContent = (order.petName || 'Sin nombre') + ', ' + order.measure + ', ' + order.code;
   viewWhite.disabled = viewColor.disabled = true;
   showViewer(false);
   // Las fotos del cliente quedan junto al modelo para comparar.

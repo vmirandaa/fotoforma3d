@@ -96,7 +96,7 @@ function renderTracking(order) {
   document.querySelector('#seguimiento-actualizado').textContent = updated ? 'Última actualización: ' + updated + '.' : '';
   trackDetails.replaceChildren(
     detail('Figura', (Number(order.quantity) > 1 ? order.quantity + ' × ' : '') + order.measure + (order.finish === 'pintada' ? ', pintada' : ', en blanco') + (order.extrasText ? ', ' + order.extrasText : '')),
-    detail('Mascota', [order.petName || 'Sin nombre', SPECIES_NAMES[order.species]].filter(Boolean).join(' · ')),
+    detail('Mascota', [order.petName || 'Sin nombre', SPECIES_NAMES[order.species]].filter(Boolean).join(', ')),
     detail('Precio', formatPrice(order.price) + ' más envío')
   );
   document.querySelector('#seguimiento-contacto').href = 'mailto:hola@forma3d.cl?subject=' + encodeURIComponent('Mi pedido ' + order.code);
@@ -154,7 +154,7 @@ function loadViewerScript() {
 trackViewButton.addEventListener('click', async () => {
   if (!tracked) return;
   trackViewButton.disabled = true;
-  trackViewButton.innerHTML = 'Cargando la figura… <span>◌</span>';
+  trackViewButton.textContent = 'Cargando la figura…';
   try {
     const [response] = await Promise.all([
       fetch('/api/seguimiento/modelo', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(tracked) }),
@@ -186,7 +186,7 @@ trackViewButton.addEventListener('click', async () => {
     trackViewButton.hidden = true;
   } catch (error) {
     trackViewButton.disabled = false;
-    trackViewButton.innerHTML = 'Ver su figura en 3D <span>◈</span>';
+    trackViewButton.textContent = 'Ver su figura en 3D';
     setCuentaMessage(trackMessage, error.message, true);
     trackForm.hidden = true;
   }
