@@ -257,6 +257,86 @@ uploadZone.addEventListener('drop', (event) => {
   addFiles(event.dataTransfer.files);
 });
 
+// --- Creador por pasos en celular ---
+// En pantallas chicas el formulario se muestra en tres pantallas (fotos, su mascota, confirmar).
+// No se mueven elementos: cada uno lleva su número de paso y el CSS oculta los de los otros pasos.
+const WIZARD_STEPS = [
+  { title: 'Sus fotos', parts: ['.studio-form-heading', '.photo-checklist', '#upload-zone', '#file-list', '#more-angles'] },
+  { title: 'Su mascota', parts: ['#pet-name', '#pet-species', '.tail-field', '#pet-notes'] },
+  { title: 'Confirmar', parts: ['.consent-row', '#generate-model', '#generate-hint', '#generation-progress', '.privacy-message'] }
+];
+const wizardQuery = window.matchMedia('(max-width: 700px)');
+const wizardHead = document.createElement('div');
+wizardHead.className = 'wizard-head';
+const wizardNav = document.createElement('div');
+wizardNav.className = 'wizard-nav';
+const wizardBack = Object.assign(document.createElement('button'), { type: 'button', className: 'wizard-back', textContent: '← Atrás' });
+const wizardNext = Object.assign(document.createElement('button'), { type: 'button', className: 'button button-dark wizard-next' });
+const wizardHint = Object.assign(document.createElement('p'), { className: 'wizard-hint' });
+wizardHint.setAttribute('role', 'status');
+wizardNav.append(wizardBack, wizardNext, wizardHint);
+WIZARD_STEPS.forEach((step, index) => {
+  step.parts.forEach((selector) => {
+    const element = form.querySelector(selector);
+    const block = element && (element.closest('.field-block') && !element.matches('fieldset') ? element.closest('.field-block') : element);
+    if (block) block.dataset.paso = String(index + 1);
+  });
+});
+form.prepend(wizardHead);
+form.append(wizardNav);
+let wizardStep = 1;
+function wizardBlocker(step) {
+  if (step === 1) {
+    if (preparingPhotos) return 'Espera a que se preparen las fotos.';
+    if (!selectedFiles.length) return 'Sube al menos una foto para seguir.';
+  }
+  if (step === 2) {
+    if (!tailChoice()) return 'Cuéntanos si se ve su cola en las fotos.';
+    if (!tailReady()) return 'Describe brevemente su cola.';
+  }
+  return '';
+}
+function renderWizard(scroll) {
+  const active = wizardQuery.matches;
+  form.classList.toggle('wizard', active);
+  if (!active) { delete form.dataset.pasoActual; return; }
+  form.dataset.pasoActual = String(wizardStep);
+  wizardHead.replaceChildren();
+  const label = document.createElement('span');
+  label.textContent = 'Paso ' + wizardStep + ' de ' + WIZARD_STEPS.length;
+  const title = document.createElement('strong');
+  title.textContent = WIZARD_STEPS[wizardStep - 1].title;
+  const dots = document.createElement('ol');
+  dots.setAttribute('aria-hidden', 'true');
+  WIZARD_STEPS.forEach((step, index) => {
+    const dot = document.createElement('li');
+    if (index + 1 < wizardStep) dot.className = 'hecho';
+    if (index + 1 === wizardStep) dot.className = 'actual';
+    dots.append(dot);
+  });
+  wizardHead.append(label, title, dots);
+  wizardBack.hidden = wizardStep === 1;
+  wizardNext.hidden = wizardStep === WIZARD_STEPS.length;
+  wizardNext.innerHTML = 'Siguiente: ' + WIZARD_STEPS[Math.min(wizardStep, WIZARD_STEPS.length - 1)].title.toLowerCase() + ' <span>→</span>';
+  wizardHint.textContent = '';
+  // Un aviso de éxito del paso anterior ("Foto lista.") ya no aporta al cambiar de paso.
+  if (scroll && stateBox.classList.contains('success')) showState('');
+  if (scroll) form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+wizardNext.addEventListener('click', () => {
+  const blocker = wizardBlocker(wizardStep);
+  if (blocker) { wizardHint.textContent = blocker; return; }
+  wizardStep = Math.min(wizardStep + 1, WIZARD_STEPS.length);
+  renderWizard(true);
+});
+wizardBack.addEventListener('click', () => {
+  if (generationBusy) return;
+  wizardStep = Math.max(wizardStep - 1, 1);
+  renderWizard(true);
+});
+wizardQuery.addEventListener('change', () => renderWizard(false));
+renderWizard(false);
+
 async function checkServer() {
   try {
     const response = await fetch('/api/health');
