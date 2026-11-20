@@ -845,3 +845,11 @@ h1 em, h2 em { font-family: var(--heading); font-style: italic; font-weight: 400
   .upload-zone .con-dedo { display: block; }
 }
 .upload-zone .upload-limit { left: 12px; right: 12px; text-align: center; line-height: 1.4; }
+
+/* Panel en celular: más aire entre datos; el estado ocupa toda la fila y los dos botones van debajo, parejos */
+@media (max-width: 700px) {
+  .order-card { gap: 14px 20px; padding: 18px; }
+  .order-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .order-actions select { grid-column: 1 / -1; height: 46px; padding: 0 12px; }
+  .order-actions button { height: 44px; padding: 0 10px; font-size: 14px; white-space: nowrap; }
+}
