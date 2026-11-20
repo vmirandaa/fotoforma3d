@@ -166,7 +166,7 @@ function renderOrders(orders, states) {
     mail.href = 'mailto:' + order.email + '?subject=' + encodeURIComponent('Tu figura FORMA · reserva ' + order.code);
     card.append(
       field('Reserva', el('strong', order.code), el('small', when)),
-      field('Figura', el('strong', order.measure + ' · ' + formatPrice(order.price)), el('small', (order.petName || 'Sin nombre') + ' · ' + (SPECIES_LABELS[order.species] || order.species || ''))),
+      field('Figura', el('strong', order.measure + (order.finish === 'pintada' ? ' · pintada' : '') + ' · ' + formatPrice(order.price)), el('small', (order.petName || 'Sin nombre') + ' · ' + (SPECIES_LABELS[order.species] || order.species || ''))),
       field('Cliente', document.createTextNode(order.name), document.createElement('br'), mail)
     );
 

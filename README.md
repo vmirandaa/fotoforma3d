@@ -29,6 +29,10 @@ Si existe el archivo `figura-muestra.glb` en esta carpeta, la portada lo muestra
 
 `catalogo.json` es la única fuente de tallas, medidas y precios: la leen la portada, el creador y el servidor. Cámbialos ahí.
 
+Cada talla tiene además el campo `pintada`: lo que se suma al precio si el cliente la pide pintada por el taller. Los valores actuales son de ejemplo. Si borras ese campo de una talla, esa talla solo se ofrece en blanco. La reserva guarda el acabado (`finish`), el precio base, el recargo y el total.
+
+La portada dibuja las tallas a escala junto a una taza, a partir de la medida de cada una (`"8 cm"` → 8).
+
 ## Reservas
 
 Al reservar, el servidor agrega una línea a `pedidos/pedidos.jsonl` (código, talla, precio, nombre, correo, mascota y comentarios), guarda el modelo como `pedidos/<código>.glb` y copia las fotos del cliente como `pedidos/<código>-foto-N.jpg`. Esa carpeta no se sirve por la web ni entra a git. Todavía no hay pago en línea.

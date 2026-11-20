@@ -240,6 +240,10 @@ async function handleOrder(request, response) {
   if (!task || task.state !== 'done' || !task.glb) return sendJson(response, 409, { error: 'La vista previa ya no está disponible. Genérala de nuevo para reservar.' });
   const size = loadCatalog().tallas.find((item) => item.id === body.size);
   if (!size) return sendJson(response, 400, { error: 'Elige un tamaño para tu figura.' });
+  // Acabado: en blanco (incluido) o pintada por el taller, con el recargo que indica catalogo.json para esa talla.
+  const finish = body.finish === 'pintada' ? 'pintada' : 'blanco';
+  const paintPrice = finish === 'pintada' ? Number(size.pintada) : 0;
+  if (finish === 'pintada' && !(paintPrice > 0)) return sendJson(response, 400, { error: 'Esta talla no se ofrece pintada.' });
   const name = cleanText(body.name, 80);
   const email = cleanText(body.email, 120);
   if (!name) return sendJson(response, 400, { error: 'Escribe tu nombre para reservar.' });
@@ -269,7 +273,10 @@ async function handleOrder(request, response) {
     createdAt: new Date().toISOString(),
     size: size.id,
     measure: size.medida,
-    price: size.precio,
+    finish,
+    basePrice: size.precio,
+    paintPrice,
+    price: size.precio + paintPrice,
     name,
     email,
     petName: task.petName,
@@ -282,7 +289,7 @@ async function handleOrder(request, response) {
   };
   await fs.promises.appendFile(ORDERS_FILE,JSON.stringify(order) + '\n', 'utf8');
   task.orderCode = code;
-  console.log('Nueva reserva ' + code + ' · ' + size.medida + ' · ' + photos.length + ' foto(s)' + (modelFile ? '' : ' · SIN COPIA DEL MODELO'));
+  console.log('Nueva reserva ' + code + ' · ' + size.medida + (finish === 'pintada' ? ' pintada' : '') + ' · ' + photos.length + ' foto(s)' + (modelFile ? '' : ' · SIN COPIA DEL MODELO'));
   sendJson(response, 201, { code });
   // El aviso por correo va después de responder: si falla, la reserva ya quedó guardada.
   sendOrderEmails(order).then((mail) => {
@@ -441,6 +448,7 @@ async function handleTracking(request, response) {
     status: order.status,
     statusUpdatedAt: states[order.code]?.updatedAt || null,
     measure: order.measure,
+    finish: order.finish || 'blanco',
     price: order.price,
     petName: order.petName || '',
     species: order.species || '',

@@ -133,13 +133,20 @@
               <button type="button" id="finish-white" aria-pressed="true" disabled>En blanco, como llega</button>
               <button type="button" id="finish-color" aria-pressed="false" disabled>Con sus colores</button>
             </div>
-            <p class="result-note" id="result-note">La figura se imprime en blanco. Los colores son solo una referencia para compararla con la foto o para pintarla después.</p>
+            <p class="result-note" id="result-note">La figura se imprime en blanco. Los colores son una referencia para compararla con la foto; si la pides pintada, el taller los usa como guía.</p>
           </section>
           <aside class="edit-sidebar">
             <form class="order-panel" id="order-form" novalidate>
               <h2>Pide tu figura</h2>
               <p>Elige el tamaño y déjanos tus datos. Te escribimos para confirmar el pago y el envío.</p>
               <fieldset class="size-options" id="size-options"><legend>Tamaño</legend></fieldset>
+              <fieldset class="size-options finish-options" id="finish-options">
+                <legend>Acabado</legend>
+                <label class="size-option"><input type="radio" name="finish" value="blanco" checked><strong>En blanco</strong><small>Incluido · lista para pintar</small></label>
+                <label class="size-option" id="paint-option"><input type="radio" name="finish" value="pintada"><strong>Pintada</strong><small id="paint-price">por el taller</small></label>
+                <p class="finish-note" id="finish-note" hidden>La pintamos a mano, tomando como guía los colores de sus fotos. Puede tardar algunos días más; te confirmamos el plazo al escribirte.</p>
+              </fieldset>
+              <p class="order-total" id="order-total" hidden></p>
               <div class="field-block">
                 <label for="order-name">Tu nombre</label>
                 <input id="order-name" type="text" maxlength="80" autocomplete="name" required>

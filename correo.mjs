@@ -43,7 +43,8 @@ function plain(title, rows, closing) {
 export function buildOrderEmails(order, config) {
   const from = { name: 'FORMA', address: config.from };
   const pet = order.petName || 'Sin nombre';
-  const figure = order.measure + ' · ' + formatPrice(order.price);
+  const finish = order.finish === 'pintada' ? 'pintada por el taller' : 'en blanco';
+  const figure = order.measure + ', ' + finish + ' · ' + formatPrice(order.price);
   const species = SPECIES_LABELS[order.species] || order.species || '';
 
   const shopRows = [
@@ -60,7 +61,7 @@ export function buildOrderEmails(order, config) {
 
   const customerRows = [
     ['Código de reserva', order.code],
-    ['Figura', (order.petName ? 'La figura de ' + order.petName : 'Tu figura') + ', ' + order.measure],
+    ['Figura', (order.petName ? 'La figura de ' + order.petName : 'Tu figura') + ', ' + order.measure + ', ' + finish],
     ['Precio', formatPrice(order.price) + ' (el envío se cotiza según tu comuna)']
   ];
   const customerTitle = 'Hola ' + order.name + ', recibimos tu reserva';
@@ -71,7 +72,7 @@ export function buildOrderEmails(order, config) {
       from,
       to: config.notifyTo,
       replyTo: { name: order.name, address: order.email },
-      subject: shopTitle + ' · ' + order.measure + ' · ' + pet,
+      subject: shopTitle + ' · ' + order.measure + (order.finish === 'pintada' ? ' pintada' : '') + ' · ' + pet,
       text: plain(shopTitle, shopRows, shopClosing),
       html: layout(shopTitle, shopRows, shopClosing)
     },

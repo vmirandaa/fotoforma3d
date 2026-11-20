@@ -57,6 +57,12 @@ if (sizeGrid) {
       price.className = 'size-price';
       price.textContent = formatPrice(size.precio);
       card.append(name, measure, text, price);
+      if (Number(size.pintada) > 0) {
+        const painted = document.createElement('span');
+        painted.className = 'size-painted';
+        painted.textContent = 'Pintada por el taller: +' + formatPrice(size.pintada);
+        card.append(painted);
+      }
       if (size.destacada) {
         const tag = document.createElement('span');
         tag.className = 'size-tag';

@@ -440,7 +440,7 @@ async function runGeneration() {
     hasGeneratedModel = true;
     orderSent = false;
     captureMaterials();
-    applyFinish('white');
+    applyFinish(selectedFinish() === 'pintada' ? 'color' : 'white');
     modelStage.classList.add('ready');
     viewerHint.hidden = false;
     figureTitle.textContent = petName ? 'La figura de ' + petName : 'Su figura';
@@ -467,7 +467,37 @@ form.addEventListener('submit', (event) => {
 });
 
 // --- Pedido ---
+const paintOption = document.querySelector('#paint-option');
+const paintPrice = document.querySelector('#paint-price');
+const finishNote = document.querySelector('#finish-note');
+const orderTotal = document.querySelector('#order-total');
+let catalogSizes = [];
+function selectedFinish() {
+  const checked = orderForm.querySelector('input[name="finish"]:checked');
+  return checked ? checked.value : 'blanco';
+}
+// Muestra el recargo de pintarla según la talla elegida y el total de la reserva.
+function updateOrderTotal() {
+  const size = catalogSizes.find((item) => item.id === selectedSize());
+  const canPaint = Boolean(size && Number(size.pintada) > 0);
+  paintOption.hidden = !canPaint;
+  if (!canPaint && selectedFinish() === 'pintada') orderForm.querySelector('input[name="finish"][value="blanco"]').checked = true;
+  paintPrice.textContent = canPaint ? '+' + formatPrice(size.pintada) + ' · por el taller' : 'por el taller';
+  const painted = canPaint && selectedFinish() === 'pintada';
+  finishNote.hidden = !painted;
+  orderTotal.hidden = !size;
+  if (size) {
+    orderTotal.replaceChildren('Total ', Object.assign(document.createElement('strong'), { textContent: formatPrice(size.precio + (painted ? Number(size.pintada) : 0)) }), ' más envío');
+  }
+}
+orderForm.querySelectorAll('input[name="finish"]').forEach((radio) => radio.addEventListener('change', () => {
+  updateOrderTotal();
+  // Al elegir pintada se muestra la vista previa con sus colores, que es la guía del taller.
+  if (hasGeneratedModel) applyFinish(selectedFinish() === 'pintada' ? 'color' : 'white');
+}));
+
 catalogPromise.then((catalog) => {
+  catalogSizes = catalog.tallas;
   catalog.tallas.forEach((size) => {
     const option = document.createElement('label');
     option.className = 'size-option';
@@ -476,7 +506,7 @@ catalogPromise.then((catalog) => {
     input.name = 'size';
     input.value = size.id;
     input.checked = Boolean(size.destacada);
-    input.addEventListener('change', syncButtons);
+    input.addEventListener('change', () => { syncButtons(); updateOrderTotal(); });
     const measure = document.createElement('strong');
     measure.textContent = size.medida;
     const detail = document.createElement('small');
@@ -485,6 +515,7 @@ catalogPromise.then((catalog) => {
     sizeOptions.append(option);
   });
   syncButtons();
+  updateOrderTotal();
 }).catch(() => {
   setOrderStatus('No pudimos cargar los tamaños. Recarga la página para intentarlo de nuevo.', 'error');
 });
@@ -503,7 +534,7 @@ orderForm.addEventListener('submit', async (event) => {
     const response = await fetch('/api/order', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ taskId, size: selectedSize(), name, email, notes: orderNotes.value.trim() })
+      body: JSON.stringify({ taskId, size: selectedSize(), finish: selectedFinish(), name, email, notes: orderNotes.value.trim() })
     });
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || 'No se pudo registrar la reserva.');

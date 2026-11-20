@@ -95,7 +95,7 @@ function renderTracking(order) {
   const updated = order.statusUpdatedAt ? formatDate(order.statusUpdatedAt, true) : '';
   document.querySelector('#seguimiento-actualizado').textContent = updated ? 'Última actualización: ' + updated + '.' : '';
   trackDetails.replaceChildren(
-    detail('Figura', order.measure),
+    detail('Figura', order.measure + (order.finish === 'pintada' ? ', pintada' : ', en blanco')),
     detail('Mascota', [order.petName || 'Sin nombre', SPECIES_NAMES[order.species]].filter(Boolean).join(' · ')),
     detail('Precio', formatPrice(order.price) + ' más envío')
   );
