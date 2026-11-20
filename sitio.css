@@ -824,3 +824,16 @@ h1 em, h2 em { font-family: var(--heading); font-style: italic; font-weight: 400
 }
 /* Sin la frase de apoyo, el encabezado del paso de fotos se oculta completo en el creador por pasos */
 .studio-form.wizard .studio-form-heading { display: none; }
+
+/* Pestañas del creador en celular: un selector de dos opciones parejas, sin subtítulos ni flechas */
+@media (max-width: 700px) {
+  .studio-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; width: auto; margin: 16px 4% 0; padding: 4px; border: 1px solid var(--line); border-radius: 999px; background: var(--white); }
+  .studio-tab { justify-content: center; gap: 8px; padding: 11px 10px; border-radius: 999px; }
+  .studio-tab small, .studio-tab > b { display: none; }
+  .studio-tab > span:first-child { font-size: 12px; }
+  .studio-tab strong { font-size: 15px; }
+  .studio-tab.active { background: var(--green); }
+  .studio-tab.active > span:first-child, .studio-tab.active strong { color: #fff; }
+  .theme-dark .studio-tabs { background: #171b18; border-color: #39433b; }
+  .theme-dark .studio-tab.active > span:first-child, .theme-dark .studio-tab.active strong { color: #14201a; }
+}
