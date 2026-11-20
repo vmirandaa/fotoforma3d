@@ -854,3 +854,8 @@ h1 em, h2 em { font-family: var(--heading); font-style: italic; font-weight: 400
   .order-actions select { grid-column: 1 / -1; height: 46px; padding: 0 12px; }
   .order-actions button { height: 44px; padding: 0 10px; font-size: 14px; white-space: nowrap; }
 }
+
+/* El botón de modo reserva el ancho de su texto más largo ("Modo oscuro"): así, al cambiar a "Modo claro",
+   no se achica ni corre los enlaces del menú durante la transición. */
+#theme-label { display: inline-block; text-align: left; }
+#theme-label::after { content: 'Modo oscuro'; display: block; height: 0; overflow: hidden; visibility: hidden; }
