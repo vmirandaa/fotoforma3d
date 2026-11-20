@@ -781,20 +781,6 @@ h1 em, h2 em { font-family: var(--heading); font-style: italic; font-weight: 400
   .ticker > .ticker-copia { display: none !important; }
 }
 
-/* Tallas en celular: una sola fila que se desliza con el dedo, con la siguiente tarjeta asomando */
-.size-swipe-hint { display: none; }
-@media (max-width: 700px) {
-  .size-grid { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-left: 0; padding: 2px 2px 14px; margin: 0 -2px; scrollbar-width: none; overscroll-behavior-x: contain; }
-  .size-grid::-webkit-scrollbar { display: none; }
-  .size-grid .size-card { flex: 0 0 72%; scroll-snap-align: start; }
-  .size-swipe-hint { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 4px; font-size: 13px; color: var(--muted); }
-  .size-dots { display: flex; gap: 6px; }
-  .size-dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--soft-strong); transition: width .25s, background .25s; }
-  .size-dots i.actual { width: 20px; border-radius: 999px; background: var(--green); }
-  .theme-dark .size-dots i { background: #3a463c; }
-  .theme-dark .size-dots i.actual { background: var(--green); }
-}
-
 /* Comparador en celular: una talla a la vez junto a la taza, más grande */
 .compare-picker, .size-compare .solo-celular { display: none; }
 @media (max-width: 700px) {
@@ -810,4 +796,19 @@ h1 em, h2 em { font-family: var(--heading); font-style: italic; font-weight: 400
   .compare-label { font-size: 13px; }
   .compare-label strong { font-size: 15px; }
   .compare-item.elegida .compare-label strong { color: var(--green); }
+}
+
+/* Tallas en celular: una debajo de otra, compactas (medida a la izquierda, precio a la derecha) */
+@media (max-width: 700px) {
+  .size-grid { grid-template-columns: 1fr; gap: 10px; }
+  .size-grid .size-card { display: grid; grid-template-columns: 1fr auto; grid-template-areas: 'nombre etiqueta' 'medida precio' 'texto texto' 'pintada pintada'; align-items: baseline; column-gap: 14px; padding: 16px 18px; }
+  .size-card .size-name { grid-area: nombre; }
+  .size-card .size-tag { grid-area: etiqueta; position: static; justify-self: end; }
+  .size-card .size-measure { grid-area: medida; margin-top: 4px; font-size: 30px; }
+  .size-card .size-price { grid-area: precio; margin: 0; padding: 0; border: 0; justify-self: end; font-size: 20px; }
+  .size-card p { grid-area: texto; margin: 4px 0 0; }
+  .size-card .size-painted { grid-area: pintada; margin-top: 6px; padding-top: 8px; border-top: 1px solid var(--line); }
+  .size-card.featured .size-painted { border-color: #71806f; }
+  .theme-dark .size-card .size-painted { border-color: #424e45; }
+  .theme-dark .size-card.featured .size-painted { border-color: #758b79; }
 }
