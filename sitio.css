@@ -812,3 +812,8 @@ h1 em, h2 em { font-family: var(--heading); font-style: italic; font-weight: 400
   .theme-dark .size-card .size-painted { border-color: #424e45; }
   .theme-dark .size-card.featured .size-painted { border-color: #758b79; }
 }
+
+/* Las esquinas redondeadas de las preguntas frecuentes dejaban ver el fondo de la página:
+   detrás de ellas se pinta el mismo color de la sección de precios, que va justo antes. */
+.price-section + .faq-section { position: relative; }
+.price-section + .faq-section::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 40px; background: var(--soft); z-index: -1; }
