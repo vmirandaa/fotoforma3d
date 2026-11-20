@@ -5,8 +5,8 @@ La portada (`index.html`) presenta el servicio: una figura 3D de tu mascota hech
 ## Ponerlo en marcha
 
 1. Instala Node.js 20.6 o posterior.
-2. Crea una clave API en el panel de Hyper3D.
-3. Copia `.env.example` como `.env` y reemplaza el valor de `RODIN_API_KEY` por tu clave privada.
+2. Crea una clave API en el servicio 3D que vas a usar: Tripo, en [developers.tripo3d.ai](https://developers.tripo3d.ai), o Hyper3D si usas Rodin.
+3. Copia `.env.example` como `.env`, deja `PROVIDER=tripo` (o `rodin`) y pega tu clave en `TRIPO_API_KEY` (o `RODIN_API_KEY`).
 4. Abre PowerShell en esta carpeta y ejecuta `npm start`.
 5. Abre [http://127.0.0.1:4173](http://127.0.0.1:4173).
 
@@ -21,14 +21,31 @@ No pongas la clave dentro de los archivos HTML o JavaScript del navegador ni la 
 - `data/catalog.json`: tallas, precios y extras.
 - `assets/`: imágenes (`images/`) y el modelo de muestra de la portada (`models/`).
 - `server.mjs`: el servidor (vista previa, reservas, seguimiento y panel); `mailer.mjs`: los correos.
+- `providers/`: los servicios de generación 3D, uno por archivo (`tripo.mjs`, `rodin.mjs`); `index.mjs` elige cuál usar.
 - `pedidos/`: las reservas guardadas. No entra a git.
 
 ## Vista previa
 
-La vista previa usa Rodin / Hyper3D (Gen-2.5), un servicio externo con cobro por créditos. Como es gratis para el visitante, cada una la pagas tú:
+La vista previa la genera un servicio externo con cobro por créditos. Como es gratis para el visitante, cada una la pagas tú. `PROVIDER` en `.env` elige el servicio:
 
-- `PREVIEW_TIER` define el nivel de detalle (`Gen-2.5-Low`, `Gen-2.5-Medium` o `Gen-2.5-High`).
-- `PREVIEW_LIMIT_PER_HOUR` limita cuántas puede pedir una misma IP por hora.
+- **Tripo** (`PROVIDER=tripo`, por defecto). Cuesta 30 créditos (US$0,30) por vista previa con colores, o 20 sin colores (`TRIPO_TEXTURE=false`). Si el cliente sube foto de frente y al menos otra de costado o espalda (por ejemplo, con la subida por ángulos), usa la multivista de Tripo; si no, genera desde una sola foto. Tripo no acepta texto junto a las fotos: las indicaciones de cola, orejas o detalles no llegan al modelo, pero quedan en la reserva para el taller. `TRIPO_MODEL` permite fijar otra versión del modelo.
+- **Rodin / Hyper3D** (`PROVIDER=rodin`). Acepta texto junto a las fotos (lo arma `buildPetPrompt` en `server.mjs`). `PREVIEW_TIER` define el nivel de detalle (`Gen-2.5-Low`, `Gen-2.5-Medium` o `Gen-2.5-High`).
+
+Cada servicio está en su archivo de `providers/` con el mismo contrato (empezar una tarea y consultar su estado). Para sumar otro, como Hunyuan, se crea su archivo y se agrega a la lista de `providers/index.mjs`; el resto del sitio no cambia. Cuando una vista previa está lista, el servidor descarga el modelo y lo guarda junto a las fotos, así no depende de cuánto dure el enlace del servicio. Si el servicio falla (por ejemplo, sin créditos o con la clave equivocada), el cliente ve un mensaje simple y el motivo exacto queda en la consola del servidor.
+
+Límites de gasto y protección contra spam:
+
+- `PREVIEW_LIMIT_PER_HOUR` y `PREVIEW_LIMIT_PER_DAY` limitan cuántas puede pedir una misma conexión por hora y por día (por defecto, 6 y 15).
+- `PREVIEW_DAILY_BUDGET` es el tope del sitio completo en 24 horas (por defecto, 100): acota el gasto diario aunque lleguen muchas visitas.
+- Al publicar el servidor detrás de un servicio como Render o Railway, define `TRUST_PROXY=true` para que los límites usen la dirección real de cada visitante.
+
+Además, el creador tiene protecciones invisibles contra envíos automáticos:
+
+- **Pase de la página:** al abrir el creador, el servidor entrega un pase firmado que se exige para generar. Cada pase sirve una sola vez y vence en 6 horas.
+- **Tiempo mínimo:** el pase no se acepta en los primeros 4 segundos; una persona siempre tarda más en subir fotos y responder.
+- **Campo trampa:** un campo oculto que las personas no ven. Si llega lleno, la vista previa se rechaza.
+
+Los rechazos quedan anotados en la consola del servidor. Los conteos viven en memoria y se reinician si se reinicia el servidor.
 
 El servidor arma el prompt para mascotas en `buildPetPrompt` (`server.mjs`); el visitante solo indica el animal y, si quiere, algún detalle. Las fotos se guardan en una carpeta temporal del sistema y se borran a las 24 horas, o al reiniciar el servidor, si nadie reserva. El visor muestra la figura en blanco, como se imprime, o con los colores de la foto.
 

@@ -21,3 +21,4 @@
 @use 'overrides'; // Retoques posteriores (portada, celular, panel y modo oscuro)
 @use 'angle-upload'; // Creador: subida por ángulos (frente, costados y espalda)
 @use 'order-extras'; // Creador: extras del pedido (formato, estilo, base y cantidad)
+@use 'spam-protection'; // Protección contra envíos automáticos (campo trampa del creador)

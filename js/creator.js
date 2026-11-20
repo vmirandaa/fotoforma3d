@@ -500,6 +500,23 @@ finishColor.addEventListener('click', () => applyFinish('color'));
 // --- Generación de la vista previa ---
 function wait(ms) { return new Promise((resolve) => window.setTimeout(resolve, ms)); }
 
+// --- Pase del creador (protección contra envíos automáticos) ---
+// El servidor lo entrega al abrir la página y lo exige para generar. Cada pase sirve una vez.
+let previewPass = '';
+let previewPassAt = 0;
+async function refreshPass() {
+  try {
+    const response = await fetch('/api/pase', { cache: 'no-store' });
+    const result = await response.json();
+    previewPass = result.pase || '';
+    previewPassAt = Date.now();
+  } catch { previewPass = ''; }
+}
+refreshPass();
+function startGeneration(payload) {
+  return fetch('/api/generate', { method: 'POST', body: payload, headers: { 'x-forma-pase': previewPass } });
+}
+
 // --- Pantalla de espera: etapas, tiempo transcurrido y consejos mientras se genera ---
 const WAIT_STEPS = {
   send: 'Enviando las fotos…',
@@ -517,7 +534,7 @@ const WAIT_TIPS = [
   'Los detalles muy finos, como bigotes o pelos sueltos, se simplifican para que la figura se pueda imprimir.'
 ];
 const PAGE_TITLE = document.title;
-const waitState = { started: 0, step: '', clock: null, tipIndex: 0 };
+const waitState = { started: 0, step: '', clock: null, tipIndex: 0, realProgress: 0 };
 function formatElapsed(ms) {
   const seconds = Math.max(0, Math.floor(ms / 1000));
   return Math.floor(seconds / 60) + ':' + String(seconds % 60).padStart(2, '0');
@@ -537,7 +554,8 @@ function tickWait() {
   const elapsed = Date.now() - waitState.started;
   progressTime.textContent = formatElapsed(elapsed);
   // Avance estimado: se acerca al 95 % sin llegar, porque el servicio no informa un porcentaje real.
-  const estimate = 4 + 91 * (1 - Math.exp(-elapsed / 150000));
+  // Si el servicio informa su avance real (Tripo lo hace), se usa cuando va por delante de la estimación.
+  const estimate = Math.max(4 + 91 * (1 - Math.exp(-elapsed / 150000)), Math.min(95, waitState.realProgress));
   progressFill.style.width = estimate.toFixed(1) + '%';
   const seconds = Math.floor(elapsed / 1000);
   if (seconds > 0 && seconds % 10 === 0) showWaitTip(waitState.tipIndex + 1);
@@ -548,6 +566,7 @@ function showWaitTip(index) {
 }
 function startWaiting() {
   waitState.started = Date.now();
+  waitState.realProgress = 0;
   progressBox.hidden = false;
   progressBox.classList.remove('terminado', 'fallido');
   progressFill.style.width = '4%';
@@ -586,6 +605,7 @@ async function pollTask(id) {
     if (!response.ok) throw new Error(result.error || 'No se pudo consultar el avance.');
     if (result.status === 'failed') throw new Error(result.error || 'No pudimos crear la figura con esta foto.');
     if (result.status === 'done') return result;
+    if (Number(result.progress) > 0) waitState.realProgress = Number(result.progress);
     if (result.status === 'generating' || result.status === 'downloading') {
       setWaitStep(Date.now() - waitState.started > 100000 || result.status === 'downloading' ? 'detail' : 'shape');
     }
@@ -627,8 +647,19 @@ async function runGeneration() {
     payload.append('notes', document.querySelector('#pet-notes').value.trim());
     payload.append('tail', tailChoice());
     payload.append('tailNotes', tailChoice() === 'oculta' ? tailNotesInput.value.trim() : '');
-    const response = await fetch('/api/generate', { method: 'POST', body: payload });
-    const started = await response.json();
+    payload.append('website', document.querySelector('#website').value);
+    if (!previewPass) await refreshPass();
+    let response = await startGeneration(payload);
+    let started = await response.json();
+    // Si el pase venció (por ejemplo, el servidor se reinició), se pide uno nuevo y se reintenta una vez.
+    if (response.status === 403 && started.code === 'pase') {
+      await refreshPass();
+      await wait(4500);
+      response = await startGeneration(payload);
+      started = await response.json();
+    }
+    // Cada pase sirve una vez: se pide otro para la siguiente vista previa.
+    refreshPass();
     if (!response.ok) throw new Error(started.error || 'No se pudo iniciar la vista previa.');
     setModelState('MODELANDO', false);
     setWaitStep('queue');

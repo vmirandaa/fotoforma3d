@@ -3,19 +3,20 @@ import path from 'node:path';
 import fs from 'node:fs';
 import os from 'node:os';
 import { fileURLToPath } from 'node:url';
-import { randomUUID, randomBytes, createHash, timingSafeEqual } from 'node:crypto';
+import { randomUUID, randomBytes, createHash, createHmac, timingSafeEqual } from 'node:crypto';
 import { sendOrderEmails, mailConfig } from './mailer.mjs';
+import { activeProvider } from './providers/index.mjs';
+import { ProviderError } from './providers/shared.mjs';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 loadLocalEnv();
+// Servicio de generación 3D en uso (PROVIDER en .env: tripo o rodin). Cada uno está en la carpeta providers/.
+const provider = activeProvider();
 const PORT = Number(process.env.PORT || 4173);
 const HOST = process.env.HOST || '127.0.0.1';
-// RODIN_API_BASE permite apuntar a un proveedor simulado para pruebas.
-const API_BASE = (process.env.RODIN_API_BASE || 'https://api.hyper3d.com/api/v2').replace(/\/+$/, '');
 const MAX_BODY = 130 * 1024 * 1024;
 // Carpeta de reservas. ORDERS_DIR permite apuntar a otra (por ejemplo, datos de demostración).
 const ORDERS_DIR = process.env.ORDERS_DIR ? path.resolve(process.env.ORDERS_DIR) : path.join(ROOT, 'pedidos');
-const TIERS = ['Gen-2.5-Low', 'Gen-2.5-Medium', 'Gen-2.5-High'];
 const SPECIES = { perro: 'dog', gato: 'cat', otro: 'pet animal' };
 const tasks = new Map();
 const previewLog = new Map();
@@ -61,23 +62,70 @@ function sendJson(response, status, payload) {
   });
   response.end(body);
 }
-function getApiKey() { return process.env.RODIN_API_KEY?.trim(); }
-// Nivel de detalle de la vista previa gratuita. Bájalo a Gen-2.5-Low para gastar menos créditos por visitante.
-function previewTier() {
-  const tier = process.env.PREVIEW_TIER?.trim();
-  return TIERS.includes(tier) ? tier : 'Gen-2.5-Medium';
+// Dirección del visitante. Detrás de un servicio de hosting (Render, Railway…) todas las visitas llegan desde
+// el mismo intermediario: con TRUST_PROXY=true se usa la dirección real que ese intermediario informa.
+function clientIp(request) {
+  if (process.env.TRUST_PROXY === 'true') {
+    const forwarded = String(request.headers['x-forwarded-for'] || '').split(',')[0].trim();
+    if (forwarded) return forwarded;
+  }
+  return request.socket.remoteAddress || 'desconocida';
 }
-// Cada vista previa consume créditos: se limita cuántas puede pedir una misma IP por hora (0 = sin límite).
-function previewAllowed(ip) {
-  const configured = Number(process.env.PREVIEW_LIMIT_PER_HOUR ?? 6);
-  const limit = Number.isFinite(configured) ? configured : 6;
-  if (limit <= 0) return true;
-  const since = Date.now() - 60 * 60 * 1000;
-  const recent = (previewLog.get(ip) || []).filter((time) => time > since);
-  if (recent.length >= limit) { previewLog.set(ip, recent); return false; }
-  recent.push(Date.now());
+function envLimit(name, fallback) {
+  const value = Number(process.env[name] ?? fallback);
+  return Number.isFinite(value) && value >= 0 ? value : fallback;
+}
+// Cada vista previa consume créditos. Límites (0 = sin límite):
+// - PREVIEW_LIMIT_PER_HOUR y PREVIEW_LIMIT_PER_DAY: por conexión.
+// - PREVIEW_DAILY_BUDGET: total del sitio en 24 horas, para acotar el gasto aunque lleguen muchas visitas.
+// Los conteos viven en memoria: se reinician si se reinicia el servidor.
+const previewTotal = [];
+function previewLimitReached(ip) {
+  const now = Date.now();
+  const recent = (previewLog.get(ip) || []).filter((time) => time > now - 24 * 60 * 60 * 1000);
   previewLog.set(ip, recent);
-  return true;
+  while (previewTotal.length && previewTotal[0] <= now - 24 * 60 * 60 * 1000) previewTotal.shift();
+  const perHour = envLimit('PREVIEW_LIMIT_PER_HOUR', 6);
+  const perDay = envLimit('PREVIEW_LIMIT_PER_DAY', 15);
+  const budget = envLimit('PREVIEW_DAILY_BUDGET', 100);
+  if (budget > 0 && previewTotal.length >= budget) return 'Hoy ya se generaron muchas vistas previas. Vuelve a intentarlo mañana o escríbenos y te ayudamos.';
+  if (perDay > 0 && recent.length >= perDay) return 'Ya generaste varias vistas previas hoy. Vuelve a intentarlo mañana.';
+  if (perHour > 0 && recent.filter((time) => time > now - 60 * 60 * 1000).length >= perHour) return 'Ya generaste varias vistas previas hace poco. Vuelve a intentarlo en un rato.';
+  return '';
+}
+function notePreview(ip) {
+  const times = previewLog.get(ip) || [];
+  times.push(Date.now());
+  previewLog.set(ip, times);
+  previewTotal.push(Date.now());
+}
+
+// --- Pase del creador: una firma que el servidor entrega al abrir la página y que se exige para generar.
+// Un programa que llame directo a /api/generate sin pasar por la página no lo tiene. Cada pase sirve una vez,
+// vale 6 horas y no se acepta antes de unos segundos: una persona tarda más que eso en subir fotos y responder.
+const PASS_SECRET = randomBytes(32);
+const PASS_MIN_AGE = 4000;
+const PASS_MAX_AGE = 6 * 60 * 60 * 1000;
+const usedPasses = new Map();
+function signPass(issued, nonce) {
+  return createHmac('sha256', PASS_SECRET).update(issued + '.' + nonce).digest('base64url');
+}
+function issuePass() {
+  const issued = Date.now();
+  const nonce = randomBytes(12).toString('base64url');
+  return issued + '.' + nonce + '.' + signPass(issued, nonce);
+}
+function checkPass(value) {
+  const [issued, nonce, signature] = String(value || '').split('.');
+  if (!issued || !nonce || !signature) return 'missing';
+  if (!safeEqual(signature, signPass(issued, nonce))) return 'invalid';
+  const age = Date.now() - Number(issued);
+  if (!(age >= 0) || age > PASS_MAX_AGE) return 'expired';
+  if (age < PASS_MIN_AGE) return 'too-fast';
+  for (const [key, until] of usedPasses) if (until < Date.now()) usedPasses.delete(key);
+  if (usedPasses.has(nonce)) return 'used';
+  usedPasses.set(nonce, Number(issued) + PASS_MAX_AGE);
+  return '';
 }
 function cleanText(value, max) {
   return String(value ?? '').replace(/[\u0000-\u001f\u007f]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, max);
@@ -153,37 +201,20 @@ async function readRequestBody(request, limit = MAX_BODY) {
   }
   return Buffer.concat(chunks);
 }
-async function parseJson(response) {
-  const text = await response.text();
-  try { return JSON.parse(text); } catch { throw new Error('El servicio 3D respondió con un mensaje inesperado.'); }
-}
-async function postRodin(endpoint, payload) {
-  for (let attempt = 0; attempt < 5; attempt += 1) {
-    const response = await fetch(API_BASE + endpoint, {
-      method: 'POST',
-      headers: { authorization: 'Bearer ' + getApiKey(), 'content-type': 'application/json' },
-      body: JSON.stringify(payload),
-      signal: AbortSignal.timeout(90_000)
-    });
-    if (response.status === 429 && attempt < 4) {
-      const retryAfter = Number(response.headers.get('retry-after'));
-      await new Promise((resolve) => setTimeout(resolve, Number.isFinite(retryAfter) && retryAfter > 0 ? Math.min(retryAfter, 30) * 1000 : (attempt + 1) * 5000));
-      continue;
-    }
-    const result = await parseJson(response);
-    if (!response.ok || result.error) {
-      throw Object.assign(new Error(result.message || result.error || 'El servicio 3D rechazó la solicitud.'), { status: response.status || 502 });
-    }
-    return result;
-  }
-  throw Object.assign(new Error('El servicio 3D está ocupado. Espera un momento e inténtalo nuevamente.'), { status: 429 });
-}
-
 async function handleGenerate(request, response) {
-  if (!getApiKey()) return sendJson(response, 503, { error: 'El estudio todavía no está conectado al servicio de generación 3D.' });
-  if (!previewAllowed(request.socket.remoteAddress || 'desconocida')) {
+  if (!provider.configured()) return sendJson(response, 503, { error: 'El estudio todavía no está conectado al servicio de generación 3D.' });
+  const ip = clientIp(request);
+  // El pase va en un encabezado: se revisa antes de leer las fotos, así un envío automático no consume nada.
+  const passProblem = checkPass(request.headers['x-forma-pase']);
+  if (passProblem) {
     request.resume();
-    return sendJson(response, 429, { error: 'Ya generaste varias vistas previas hace poco. Vuelve a intentarlo en un rato.' });
+    if (passProblem !== 'too-fast') console.warn('Vista previa rechazada (' + passProblem + ') desde ' + ip);
+    return sendJson(response, 403, { error: 'No pudimos validar la página. Recárgala e inténtalo de nuevo.', code: 'pase', reason: passProblem });
+  }
+  const limitMessage = previewLimitReached(ip);
+  if (limitMessage) {
+    request.resume();
+    return sendJson(response, 429, { error: limitMessage });
   }
   const rawBody = await readRequestBody(request);
   const contentType = request.headers['content-type'] || '';
@@ -194,13 +225,17 @@ async function handleGenerate(request, response) {
     duplex: 'half'
   });
   const incoming = await formRequest.formData();
+  // Campo trampa: está oculto para las personas, así que solo un programa lo llena.
+  if (String(incoming.get('website') || '').trim()) {
+    console.warn('Vista previa rechazada (campo trampa) desde ' + ip);
+    return sendJson(response, 400, { error: 'No se pudo iniciar la vista previa.' });
+  }
   const images = incoming.getAll('images').filter((item) => typeof item.arrayBuffer === 'function');
   if (images.length < 1 || images.length > 5) return sendJson(response, 400, { error: 'Selecciona entre una y cinco imágenes.' });
   for (const image of images) {
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(image.type)) return sendJson(response, 400, { error: 'Las imágenes deben ser JPG, PNG o WEBP.' });
     if (image.size > 25 * 1024 * 1024) return sendJson(response, 413, { error: 'Cada imagen puede pesar hasta 25 MB.' });
   }
-  const tier = previewTier();
   const species = Object.hasOwn(SPECIES, String(incoming.get('species'))) ? String(incoming.get('species')) : 'otro';
   const petName = cleanText(incoming.get('petName'), 40);
   const petNotes = cleanText(incoming.get('notes'), 300);
@@ -213,46 +248,33 @@ async function handleGenerate(request, response) {
   const photoDir = path.join(PHOTO_TMP, id);
   await fs.promises.mkdir(photoDir, { recursive: true });
   const photos = [];
-  const upstream = new FormData();
+  const providerPhotos = [];
   for (let index = 0; index < images.length; index += 1) {
     const image = images[index];
     const bytes = new Uint8Array(await image.arrayBuffer());
     const photoName = 'foto-' + (index + 1) + '.' + PHOTO_EXT[image.type];
+    const label = PHOTO_LABELS.includes(labels[index]) ? labels[index] : '?';
     await fs.promises.writeFile(path.join(photoDir, photoName), bytes);
-    photos.push({ file: photoName, label: PHOTO_LABELS.includes(labels[index]) ? labels[index] : '?' });
-    upstream.append('images', new Blob([bytes], { type: image.type }), image.name || ('reference-' + (index + 1)));
-    if (labels[index]) upstream.append('image_label', labels[index]);
+    photos.push({ file: photoName, label });
+    providerPhotos.push({ bytes, type: image.type, filename: image.name || photoName, label: labels[index] ? label : '' });
   }
-  upstream.append('tier', tier);
-  upstream.append('mesh_mode', 'Quad');
-  upstream.append('quality', 'high');
-  upstream.append('geometry_file_format', 'glb');
-  upstream.append('material', 'PBR');
-  upstream.append('prompt', prompt);
 
-  let upstreamResponse;
-  let result;
+  // Se cuenta antes de pedirla al servicio 3D: es el momento en que hay costo.
+  notePreview(ip);
+  let ref;
   try {
-    upstreamResponse = await fetch(API_BASE + '/rodin', {
-      method: 'POST',
-      headers: { authorization: 'Bearer ' + getApiKey() },
-      body: upstream,
-      signal: AbortSignal.timeout(120_000)
-    });
-    result = await parseJson(upstreamResponse);
+    ref = await provider.start({ photos: providerPhotos, prompt });
   } catch (error) {
     fs.rmSync(photoDir, { recursive: true, force: true });
-    throw error;
+    if (!(error instanceof ProviderError)) throw error;
+    console.error(provider.name + ': no se pudo iniciar una vista previa. ' + error.message);
+    return sendJson(response, error.status === 429 ? 429 : 502, { error: error.userMessage });
   }
-  if (!upstreamResponse.ok || result.error || !result.uuid || !result.jobs?.subscription_key) {
-    fs.rmSync(photoDir, { recursive: true, force: true });
-    return sendJson(response, upstreamResponse.status || 502, { error: result.message || result.error || 'No se pudo iniciar la generación.' });
-  }
+  if (ref.mode) console.log(provider.name + ': vista previa iniciada (' + ref.mode + (ref.views ? ': ' + ref.views.join(', ') : '') + ').');
   tasks.set(id, {
-    providerUuid: result.uuid,
-    subscriptionKey: result.jobs.subscription_key,
+    provider: provider.id,
+    ref,
     state: 'waiting',
-    files: [],
     species,
     petName,
     petNotes: petDetails,
@@ -270,7 +292,7 @@ async function handleOrder(request, response) {
     return sendJson(response, error.status || 400, { error: 'No se pudo leer la reserva.' });
   }
   const task = tasks.get(String(body?.taskId || ''));
-  if (!task || task.state !== 'done' || !task.glb) return sendJson(response, 409, { error: 'La vista previa ya no está disponible. Genérala de nuevo para reservar.' });
+  if (!task || task.state !== 'done' || !task.modelPath) return sendJson(response, 409, { error: 'La vista previa ya no está disponible. Genérala de nuevo para reservar.' });
   const catalog = loadCatalog();
   const size = catalog.tallas.find((item) => item.id === body.size);
   if (!size) return sendJson(response, 400, { error: 'Elige un tamaño para tu figura.' });
@@ -290,11 +312,8 @@ async function handleOrder(request, response) {
   await fs.promises.mkdir(ORDERS_DIR, { recursive: true });
   let modelFile = null;
   try {
-    const modelResponse = await fetch(task.glb, { signal: AbortSignal.timeout(90_000) });
-    if (modelResponse.ok) {
-      modelFile = code + '.glb';
-      await fs.promises.writeFile(path.join(ORDERS_DIR, modelFile), Buffer.from(await modelResponse.arrayBuffer()));
-    }
+    await fs.promises.copyFile(task.modelPath, path.join(ORDERS_DIR, code + '.glb'));
+    modelFile = code + '.glb';
   } catch { modelFile = null; }
   const photos = [];
   for (const photo of task.photos || []) {
@@ -329,7 +348,8 @@ async function handleOrder(request, response) {
     notes: cleanText(body.notes, 400),
     modelFile,
     photos,
-    providerUuid: task.providerUuid
+    provider: task.provider,
+    providerTask: task.ref
   };
   await fs.promises.appendFile(ORDERS_FILE,JSON.stringify(order) + '\n', 'utf8');
   task.orderCode = code;
@@ -343,51 +363,56 @@ async function handleOrder(request, response) {
   });
 }
 
+// Pregunta al servicio 3D cómo va la vista previa. Cuando está lista, descarga el modelo y lo guarda junto a las fotos:
+// así el visor y la reserva no dependen de cuánto dure el enlace del servicio.
 async function handleStatus(id, response) {
   const task = tasks.get(id);
   if (!task) return sendJson(response, 404, { error: 'No se encontró esta generación en el estudio.' });
   if (task.state === 'failed') return sendJson(response, 200, { status: 'failed', error: task.error || 'La generación falló.' });
-  if (task.state === 'done') return sendJson(response, 200, { status: 'done', modelReady: Boolean(task.glb) });
-  if (!getApiKey()) return sendJson(response, 503, { error: 'No hay una clave de generación configurada en el servidor.' });
+  if (task.state === 'done') return sendJson(response, 200, { status: 'done', modelReady: true });
+  if (task.downloading) return sendJson(response, 200, { status: 'downloading' });
+  if (!provider.configured()) return sendJson(response, 503, { error: 'No hay una clave de generación configurada en el servidor.' });
 
-  const status = await postRodin('/status', { subscription_key: task.subscriptionKey });
-  const jobs = Array.isArray(status.jobs) ? status.jobs : [];
-  if (!jobs.length) return sendJson(response, 200, { status: task.state, message: status.message || 'Esperando información del servicio.' });
-  if (jobs.some((job) => job.status === 'Failed')) {
+  const result = await provider.status(task.ref);
+  if (result.state === 'failed') {
     task.state = 'failed';
-    task.error = status.message || 'El servicio no pudo completar el modelo.';
+    task.error = result.error || 'El servicio no pudo completar el modelo.';
     return sendJson(response, 200, { status: 'failed', error: task.error });
   }
-  const done = jobs.every((job) => job.status === 'Done');
-  task.state = done ? 'downloading' : (jobs.some((job) => job.status === 'Generating') ? 'generating' : 'waiting');
-  if (!done) return sendJson(response, 200, { status: task.state });
-  const download = await postRodin('/download', { task_uuid: task.providerUuid });
-  task.files = Array.isArray(download.list) ? download.list : [];
-  const glbFile = task.files.find((file) => /\.glb(?:$|[?#])/i.test(file.name || ''));
-  if (!glbFile?.url) {
-    task.state = 'failed';
-    task.error = 'El servicio terminó, pero no incluyó el archivo GLB.';
-    return sendJson(response, 200, { status: 'failed', error: task.error });
+  if (result.state !== 'done') {
+    task.state = result.state;
+    return sendJson(response, 200, { status: task.state, progress: result.progress });
   }
-  task.glb = glbFile.url;
-  task.state = 'done';
+  task.downloading = true;
+  try {
+    const modelResponse = await fetch(result.modelUrl, { signal: AbortSignal.timeout(120_000) });
+    if (!modelResponse.ok) throw new Error('HTTP ' + modelResponse.status);
+    task.modelPath = path.join(task.photoDir, 'modelo.glb');
+    await fs.promises.writeFile(task.modelPath, Buffer.from(await modelResponse.arrayBuffer()));
+    task.state = 'done';
+  } catch (error) {
+    console.error(provider.name + ': no se pudo descargar el modelo listo. ' + error.message);
+    task.state = 'failed';
+    task.error = 'La figura se generó, pero no se pudo descargar. Inténtalo de nuevo.';
+    return sendJson(response, 200, { status: 'failed', error: task.error });
+  } finally {
+    task.downloading = false;
+  }
   sendJson(response, 200, { status: 'done', modelReady: true });
 }
 
 async function handleModel(id, response) {
   const task = tasks.get(id);
-  if (!task || task.state !== 'done' || !task.glb) return sendJson(response, 404, { error: 'El modelo todavía no está disponible.' });
-  const modelResponse = await fetch(task.glb, { signal: AbortSignal.timeout(90_000) });
-  if (!modelResponse.ok) return sendJson(response, 502, { error: 'No se pudo recuperar el modelo generado.' });
-  const headers = {
+  if (!task || task.state !== 'done' || !task.modelPath) return sendJson(response, 404, { error: 'El modelo todavía no está disponible.' });
+  let stat;
+  try { stat = await fs.promises.stat(task.modelPath); } catch { return sendJson(response, 404, { error: 'El modelo ya no está disponible.' }); }
+  response.writeHead(200, {
     'content-type': 'model/gltf-binary',
+    'content-length': stat.size,
     'cache-control': 'private, no-store',
     'x-content-type-options': 'nosniff'
-  };
-  response.writeHead(200, headers);
-  if (!modelResponse.body) return response.end();
-  for await (const chunk of modelResponse.body) response.write(Buffer.from(chunk));
-  response.end();
+  });
+  fs.createReadStream(task.modelPath).pipe(response);
 }
 
 // --- Cuenta de administrador: usuario y clave en .env (ADMIN_USER y ADMIN_PASSWORD).
@@ -440,7 +465,7 @@ async function readSmallJson(request) {
   try { return JSON.parse((await readRequestBody(request, 2 * 1024)).toString('utf8')); } catch { return null; }
 }
 async function handleAdminLogin(request, response) {
-  const ip = request.socket.remoteAddress || 'desconocida';
+  const ip = clientIp(request);
   if (!adminConfigured()) return sendJson(response, 503, { error: 'El acceso de administrador está desactivado. Define ADMIN_USER y ADMIN_PASSWORD en el archivo .env y reinicia el servidor.' });
   if (tooManyFailures(adminFailures, ip, 10)) return sendJson(response, 429, { error: 'Demasiados intentos. Espera unos minutos.' });
   const body = await readSmallJson(request);
@@ -465,7 +490,7 @@ function handleAdminLogout(request, response) {
 
 // --- Seguimiento para clientes: con el código de la reserva y el correo con que se hizo ---
 async function findTrackedOrder(request, response) {
-  const ip = request.socket.remoteAddress || 'desconocida';
+  const ip = clientIp(request);
   if (tooManyFailures(trackFailures, ip, 20)) {
     sendJson(response, 429, { error: 'Demasiados intentos. Espera unos minutos.' });
     return null;
@@ -630,8 +655,12 @@ async function serveStatic(urlPath, response, wantsHtml = false) {
 const server = http.createServer(async (request, response) => {
   try {
     const parsed = new URL(request.url, 'http://' + HOST + ':' + PORT);
+    if (request.method === 'GET' && parsed.pathname === '/api/pase') {
+      response.setHeader('cache-control', 'no-store');
+      return sendJson(response, 200, { pase: issuePass() });
+    }
     if (request.method === 'GET' && parsed.pathname === '/api/health') {
-      return sendJson(response, 200, { ready: Boolean(getApiKey()) });
+      return sendJson(response, 200, { ready: provider.configured() });
     }
     if (request.method === 'POST' && parsed.pathname === '/api/generate') return await handleGenerate(request, response);
     if (request.method === 'POST' && parsed.pathname === '/api/order') return await handleOrder(request, response);
@@ -648,12 +677,15 @@ const server = http.createServer(async (request, response) => {
     const wantsHtml = String(request.headers.accept || '').includes('text/html') && !parsed.pathname.startsWith('/api/');
     return await serveStatic(parsed.pathname, response, wantsHtml);
   } catch (error) {
-    if (!response.headersSent) sendJson(response, error.status || 502, { error: error.message || 'Error al procesar la solicitud.' });
+    // Un error del servicio 3D trae un mensaje apto para el cliente; el detalle técnico queda en la consola.
+    if (error instanceof ProviderError) console.error(provider.name + ': ' + error.message);
+    const message = error instanceof ProviderError ? error.userMessage : error.message;
+    if (!response.headersSent) sendJson(response, error.status || 502, { error: message || 'Error al procesar la solicitud.' });
     else response.destroy();
   }
 });
 server.listen(PORT, HOST, () => {
   console.log('FORMA disponible en http://' + HOST + ':' + PORT);
-  console.log(getApiKey() ? 'Servicio de generación configurado.' : 'Configura RODIN_API_KEY para activar modelos 3D.');
+  console.log('Servicio 3D: ' + provider.name + (provider.configured() ? ' (configurado).' : ' (falta ' + provider.keyName + ' en .env: las vistas previas están desactivadas).'));
   console.log(mailConfig() ? 'Avisos por correo activados.' : 'Avisos por correo desactivados: faltan SMTP_HOST, SMTP_USER o SMTP_PASS.');
 });

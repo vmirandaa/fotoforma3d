@@ -107,6 +107,8 @@
             <label for="pet-notes">¿Algo más que no se nos puede pasar? <span>OPCIONAL</span></label>
             <textarea id="pet-notes" name="notes" maxlength="300" rows="2" placeholder="Ej.: tiene una oreja doblada y una mancha blanca en el pecho."></textarea>
           </div>
+          <!-- Campo trampa contra envíos automáticos: oculto para las personas; si llega lleno, el servidor rechaza la vista previa. -->
+          <div class="hp-field" aria-hidden="true"><label for="website">Sitio web</label><input id="website" name="website" type="text" tabindex="-1" autocomplete="off"></div>
           <label class="consent-row"><input id="consent" type="checkbox" required><span>Acepto que las fotos se envíen a un servicio externo de modelado 3D para crear la vista previa.</span></label>
           <button class="button button-dark generate-model" id="generate-model" type="submit" disabled>Ver su figura en 3D <span>↗</span></button>
           <p class="generate-hint" id="generate-hint"></p>
