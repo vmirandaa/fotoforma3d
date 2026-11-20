@@ -780,3 +780,17 @@ h1 em, h2 em { font-family: var(--heading); font-style: italic; font-weight: 400
   .ticker > div::after { content: none; }
   .ticker > .ticker-copia { display: none !important; }
 }
+
+/* Tallas en celular: una sola fila que se desliza con el dedo, con la siguiente tarjeta asomando */
+.size-swipe-hint { display: none; }
+@media (max-width: 700px) {
+  .size-grid { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-left: 0; padding: 2px 2px 14px; margin: 0 -2px; scrollbar-width: none; overscroll-behavior-x: contain; }
+  .size-grid::-webkit-scrollbar { display: none; }
+  .size-grid .size-card { flex: 0 0 72%; scroll-snap-align: start; }
+  .size-swipe-hint { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 4px; font-size: 13px; color: var(--muted); }
+  .size-dots { display: flex; gap: 6px; }
+  .size-dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--soft-strong); transition: width .25s, background .25s; }
+  .size-dots i.actual { width: 20px; border-radius: 999px; background: var(--green); }
+  .theme-dark .size-dots i { background: #3a463c; }
+  .theme-dark .size-dots i.actual { background: var(--green); }
+}

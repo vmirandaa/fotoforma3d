@@ -274,3 +274,30 @@ if (stickyCta) {
   stickyQuery.addEventListener('change', queueSticky);
   updateSticky();
 }
+
+// Puntos bajo la fila de tallas en celular: marcan qué tarjeta se está viendo al deslizar.
+const sizeDots = document.querySelector('#size-dots');
+if (sizeDots && sizeGrid) {
+  catalogPromise.then(() => {
+    const cards = [...sizeGrid.querySelectorAll('.size-card')];
+    sizeDots.replaceChildren(...cards.map(() => document.createElement('i')));
+    let queued = false;
+    const markDot = () => {
+      queued = false;
+      const left = sizeGrid.getBoundingClientRect().left;
+      let current = 0;
+      cards.forEach((card, index) => {
+        if (Math.abs(card.getBoundingClientRect().left - left) < Math.abs(cards[current].getBoundingClientRect().left - left)) current = index;
+      });
+      // Al llegar al final, la última tarjeta puede no alinearse a la izquierda.
+      if (sizeGrid.scrollLeft + sizeGrid.clientWidth >= sizeGrid.scrollWidth - 4) current = cards.length - 1;
+      [...sizeDots.children].forEach((dot, index) => dot.classList.toggle('actual', index === current));
+    };
+    sizeGrid.addEventListener('scroll', () => {
+      if (queued) return;
+      queued = true;
+      window.setTimeout(markDot, 60);
+    }, { passive: true });
+    markDot();
+  }).catch(() => {});
+}
