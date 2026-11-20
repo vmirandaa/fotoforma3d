@@ -67,9 +67,73 @@ if (sizeGrid) {
     });
     const shipping = document.querySelector('#shipping-note');
     if (shipping) shipping.textContent = catalog.envio || '';
+    buildSizeCompare(catalog.tallas);
   }).catch(() => {
     sizeGrid.innerHTML = '<p class="size-fallback">No pudimos cargar los precios. <a href="mailto:hola@forma3d.cl">Escríbenos</a> y te los enviamos.</p>';
   });
+}
+
+// Comparador de tamaños: las tallas dibujadas a escala junto a una taza y una regla en centímetros.
+// La altura de cada figura sale de la medida del catálogo ("8 cm" → 8), así que se actualiza sola.
+const MUG_CM = 9;
+function buildSizeCompare(sizes) {
+  const box = document.querySelector('#size-compare');
+  const stage = document.querySelector('#compare-stage');
+  if (!box || !stage) return;
+  const svgNS = 'http://www.w3.org/2000/svg';
+  const items = sizes
+    .map((size) => ({ size, cm: parseFloat(String(size.medida).replace(',', '.')) }))
+    .filter((item) => item.cm > 0);
+  if (!items.length) return;
+  const tallest = Math.max(MUG_CM, ...items.map((item) => item.cm));
+  const rulerCm = Math.ceil(tallest) + 1;
+  stage.style.setProperty('--max-cm', rulerCm);
+  stage.replaceChildren();
+
+  const ruler = document.createElement('div');
+  ruler.className = 'compare-ruler';
+  ruler.setAttribute('aria-hidden', 'true');
+  for (let cm = 5; cm < rulerCm; cm += 5) {
+    const mark = document.createElement('span');
+    mark.style.setProperty('--at', cm);
+    mark.textContent = cm;
+    ruler.append(mark);
+  }
+  stage.append(ruler);
+
+  const makeItem = (cm, label, detail, art, extraClass) => {
+    const item = document.createElement('div');
+    item.className = 'compare-item' + (extraClass ? ' ' + extraClass : '');
+    item.style.setProperty('--h', cm);
+    const caption = document.createElement('span');
+    caption.className = 'compare-label';
+    const strong = document.createElement('strong');
+    strong.textContent = label;
+    caption.append(strong, ' ' + detail);
+    item.append(art, caption);
+    stage.append(item);
+  };
+  items.forEach(({ size, cm }) => {
+    const art = document.createElementNS(svgNS, 'svg');
+    art.setAttribute('viewBox', '0 0 120 150');
+    art.setAttribute('class', 'compare-art pet-figure');
+    art.setAttribute('aria-hidden', 'true');
+    const use = document.createElementNS(svgNS, 'use');
+    use.setAttribute('href', '#pet-shape');
+    art.append(use);
+    makeItem(cm, size.id, size.medida, art, size.destacada ? 'destacada' : '');
+  });
+  const mug = document.createElementNS(svgNS, 'svg');
+  mug.setAttribute('viewBox', '0 0 112 100');
+  mug.setAttribute('class', 'compare-art compare-mug');
+  mug.setAttribute('aria-hidden', 'true');
+  mug.innerHTML = '<path d="M84 26h8a16 16 0 0 1 0 32h-9" fill="none" stroke-width="7"/>'
+    + '<path d="M4 2h80v76a20 20 0 0 1-20 20H24A20 20 0 0 1 4 78z"/>'
+    + '<path class="mug-shine" d="M14 12v58" fill="none" stroke-width="5" stroke-linecap="round"/>';
+  makeItem(MUG_CM, 'Taza', MUG_CM + ' cm', mug, 'referencia');
+  stage.setAttribute('role', 'img');
+  stage.setAttribute('aria-label', 'Comparación a escala: ' + items.map(({ size }) => 'talla ' + size.id + ' de ' + size.medida).join(', ') + ', junto a una taza de ' + MUG_CM + ' cm.');
+  box.hidden = false;
 }
 
 menuButton.addEventListener('click', () => {
