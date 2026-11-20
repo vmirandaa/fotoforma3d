@@ -139,6 +139,29 @@ function buildSizeCompare(sizes) {
   makeItem(MUG_CM, 'Taza', MUG_CM + ' cm', mug, 'referencia');
   stage.setAttribute('role', 'img');
   stage.setAttribute('aria-label', 'Comparación a escala: ' + items.map(({ size }) => 'talla ' + size.id + ' de ' + size.medida).join(', ') + ', junto a una taza de ' + MUG_CM + ' cm.');
+
+  // En celular se compara una talla a la vez con la taza, para dibujarlas más grandes.
+  // Los botones solo se muestran en pantallas chicas; en computador se ven todas juntas.
+  const figures = [...stage.querySelectorAll('.compare-item:not(.referencia)')];
+  const picker = document.createElement('div');
+  picker.className = 'compare-picker';
+  picker.setAttribute('role', 'group');
+  picker.setAttribute('aria-label', 'Talla para comparar');
+  const choose = (index) => {
+    figures.forEach((figure, i) => figure.classList.toggle('elegida', i === index));
+    [...picker.children].forEach((button, i) => button.setAttribute('aria-pressed', String(i === index)));
+  };
+  items.forEach(({ size }, index) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.textContent = size.id;
+    button.setAttribute('aria-label', 'Talla ' + size.id + ', ' + size.medida);
+    button.addEventListener('click', () => choose(index));
+    picker.append(button);
+  });
+  box.querySelector('.compare-picker')?.remove();
+  box.prepend(picker);
+  choose(Math.max(0, items.findIndex(({ size }) => size.destacada)));
   box.hidden = false;
 }
 
