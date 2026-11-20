@@ -67,12 +67,6 @@ tabs.forEach((tab, index) => {
   });
 });
 
-const directionOptions = [
-  ['?', 'Vista sin indicar'], ['Front', 'Frente'], ['Front-Left', 'Frente izquierda'],
-  ['Front-Right', 'Frente derecha'], ['Back', 'Espalda'], ['Back-Left', 'Espalda izquierda'],
-  ['Back-Right', 'Espalda derecha'], ['Left', 'Costado izquierdo'], ['Right', 'Costado derecho'],
-  ['Up', 'Desde arriba'], ['Down', 'Desde abajo']
-];
 function showState(message, kind) {
   stateBox.textContent = message || '';
   stateBox.className = 'generation-state' + (kind ? ' ' + kind : '');
@@ -219,8 +213,8 @@ function renderFiles() {
   moreAngles.hidden = selectedFiles.length === 0;
   moreAngles.classList.toggle('nudge', selectedFiles.length === 1);
   if (selectedFiles.length === 1) moreAngles.textContent = 'Con una sola foto, el modelo inventa lo que no se ve. Si puedes, suma una de costado o donde se vea la cola.';
-  else if (selectedFiles.length >= 5) moreAngles.textContent = 'Llegaste al máximo de cinco fotos. Indica desde dónde está tomada cada una.';
-  else moreAngles.textContent = 'Indica desde dónde está tomada cada foto: ayuda a armar bien el volumen.';
+  else if (selectedFiles.length >= 5) moreAngles.textContent = 'Llegaste al máximo de cinco fotos.';
+  else moreAngles.textContent = 'Para indicar desde dónde es cada foto, usa "Por ángulos": ayuda a armar bien el volumen.';
   selectedFiles.forEach((entry, index) => {
     const card = document.createElement('div');
     card.className = 'file-thumb';
@@ -239,17 +233,7 @@ function renderFiles() {
       syncButtons();
       showState(selectedFiles.length ? filesReadyMessage() : 'Sube al menos una foto.', selectedFiles.length ? 'success' : '');
     });
-    const select = document.createElement('select');
-    select.setAttribute('aria-label', 'Ángulo de la foto ' + (index + 1));
-    directionOptions.forEach(([value, label]) => {
-      const option = document.createElement('option');
-      option.value = value;
-      option.textContent = label;
-      if (entry.label === value) option.selected = true;
-      select.append(option);
-    });
-    select.addEventListener('change', () => { entry.label = select.value; });
-    card.append(image, remove, select);
+    card.append(image, remove);
     fileList.append(card);
   });
 }
