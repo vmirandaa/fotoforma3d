@@ -13,13 +13,17 @@
       var base = document.createElement('base');
       base.href = location.pathname.indexOf('/fotoforma3d/') === 0 ? '/fotoforma3d/' : '/';
       document.head.appendChild(base);
+      // La hoja se agrega aquí, después de la base, para que el navegador no la pida en la ruta equivocada.
+      var styles = document.createElement('link');
+      styles.rel = 'stylesheet';
+      styles.href = 'sitio.css';
+      document.head.appendChild(styles);
     })();
   </script>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;1,9..144,400;1,9..144,500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="sitio.css">
 </head>
 <body id="top" class="error-page">
 
@@ -73,6 +77,9 @@
   </main>
 
   <footer class="footer"><a class="wordmark" href="index.html"><span class="brand-symbol">F</span>FORMA<span class="wordmark-dot">.</span></a><span>Figuras 3D de mascotas, desde su foto.</span><a href="index.html">IR AL INICIO ↑</a><small>© 2026 FORMA · FIGURAS 3D DE MASCOTAS</small></footer>
-  <script src="script.js"></script>
+  <script>
+    // Igual que la hoja de estilos: se pide después de fijar la base.
+    document.body.appendChild(Object.assign(document.createElement('script'), { src: 'script.js' }));
+  </script>
 </body>
 </html>
