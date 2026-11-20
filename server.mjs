@@ -549,7 +549,18 @@ function contentType(filePath) {
     '.webp': 'image/webp'
   })[extension] || 'application/octet-stream';
 }
-async function serveStatic(urlPath, response) {
+// Página no encontrada: a un navegador se le muestra 404.html (la misma que usa GitHub Pages); al resto, JSON.
+async function notFound(response, wantsHtml) {
+  if (wantsHtml) {
+    try {
+      const page = await fs.promises.readFile(path.join(ROOT, '404.html'));
+      response.writeHead(404, { 'content-type': 'text/html; charset=utf-8', 'content-length': page.length, 'x-content-type-options': 'nosniff' });
+      return response.end(page);
+    } catch { /* sin 404.html: se responde en JSON */ }
+  }
+  return sendJson(response, 404, { error: 'No encontrado.' });
+}
+async function serveStatic(urlPath, response, wantsHtml = false) {
   let decoded;
   try { decoded = decodeURIComponent(urlPath.split('?')[0]); } catch { return sendJson(response, 400, { error: 'Ruta no válida.' }); }
   if (decoded === '/') decoded = '/index.html';
@@ -558,15 +569,15 @@ async function serveStatic(urlPath, response) {
   const relativePath = path.relative(ROOT, filePath).toLowerCase();
   const topFolder = relativePath.split(path.sep)[0];
   if (['.env', '.env.example', 'package.json', 'package-lock.json', 'readme.md', '.gitignore'].includes(relativePath) || relativePath.endsWith('.mjs') || ['pedidos', 'node_modules'].includes(topFolder) || topFolder.startsWith('.') || topFolder.startsWith('_')) {
-    return sendJson(response, 404, { error: 'No encontrado.' });
+    return notFound(response, wantsHtml);
   }
   try {
     const stat = await fs.promises.stat(filePath);
-    if (!stat.isFile()) return sendJson(response, 404, { error: 'No encontrado.' });
+    if (!stat.isFile()) return notFound(response, wantsHtml);
     response.writeHead(200, { 'content-type': contentType(filePath), 'content-length': stat.size, 'x-content-type-options': 'nosniff' });
     fs.createReadStream(filePath).pipe(response);
   } catch {
-    sendJson(response, 404, { error: 'No encontrado.' });
+    notFound(response, wantsHtml);
   }
 }
 
@@ -588,7 +599,8 @@ const server = http.createServer(async (request, response) => {
     const modelMatch = parsed.pathname.match(/^\/api\/model\/([0-9a-f-]{36})$/i);
     if (request.method === 'GET' && modelMatch) return await handleModel(modelMatch[1], response);
     if (request.method !== 'GET' && request.method !== 'HEAD') return sendJson(response, 405, { error: 'Método no permitido.' });
-    return await serveStatic(parsed.pathname, response);
+    const wantsHtml = String(request.headers.accept || '').includes('text/html') && !parsed.pathname.startsWith('/api/');
+    return await serveStatic(parsed.pathname, response, wantsHtml);
   } catch (error) {
     if (!response.headersSent) sendJson(response, error.status || 502, { error: error.message || 'Error al procesar la solicitud.' });
     else response.destroy();

@@ -728,3 +728,26 @@ h1 em, h2 em { font-family: var(--heading); font-style: italic; font-weight: 400
 /* La leyenda de un fieldset se monta sobre el borde superior; flotándola queda como un rótulo normal */
 .tail-field legend { float: left; width: 100%; }
 .tail-field legend + * { clear: both; }
+
+/* ==========================================================================
+   Página no encontrada (404.html)
+   ========================================================================== */
+.error-main { min-height: calc(100vh - 220px); display: grid; grid-template-columns: minmax(0, 300px) minmax(0, 520px); align-items: center; justify-content: center; gap: clamp(28px, 6vw, 80px); padding: 60px 6% 80px; }
+.error-art { position: relative; aspect-ratio: 4 / 5; border-radius: var(--radius-card); transform: rotate(-4deg); box-shadow: 0 18px 40px #30453422; }
+.error-art svg { position: absolute; inset: 8% 10% 2%; width: 80%; height: 90%; animation: error-sniff 3.2s ease-in-out infinite; transform-origin: 50% 95%; }
+@keyframes error-sniff { 0%, 100% { transform: rotate(0); } 40% { transform: rotate(-4deg); } 60% { transform: rotate(3deg); } }
+.error-copy h1 { font-size: clamp(42px, 5vw, 64px); margin: 12px 0 14px; }
+.error-copy p { color: var(--muted); font-size: 16px; line-height: 1.7; max-width: 440px; margin: 0; }
+.error-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 22px; margin-top: 26px; }
+@media (max-width: 700px) {
+  .error-main { grid-template-columns: 1fr; padding: 36px 6% 60px; gap: 28px; text-align: left; }
+  .error-art { width: 170px; }
+  .error-copy h1 { font-size: 40px; }
+  .error-copy p { font-size: 15px; }
+}
+@media (prefers-reduced-motion: reduce) { .error-art svg { animation: none; } }
+
+/* Entrada suave al bajar por la portada (script.js agrega .revelar solo si no se pide reducir el movimiento) */
+.revelar { opacity: 0; transform: translateY(22px); transition: opacity .6s ease, transform .6s cubic-bezier(.2, .7, .2, 1); transition-delay: var(--reveal-delay, 0ms); }
+.revelar.visible { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) { .revelar { opacity: 1; transform: none; transition: none; } }

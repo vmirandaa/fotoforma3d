@@ -202,3 +202,44 @@ if (heroModelSlot) {
     heroModelSlot.append(viewer);
   }).catch(() => {});
 }
+
+// Entrada suave de las secciones de la portada al bajar por la página.
+// Se revisa al desplazarse: aparece todo lo que ya está en pantalla o quedó más arriba,
+// así nada queda oculto si se salta con un enlace del menú. No se activa si se pide reducir el movimiento.
+const revealEnabled = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const revealPending = new Set();
+let revealQueued = false;
+function revealVisible() {
+  revealQueued = false;
+  const limit = window.innerHeight * 0.92;
+  revealPending.forEach((element) => {
+    if (element.getBoundingClientRect().top < limit) {
+      element.classList.add('visible');
+      revealPending.delete(element);
+    }
+  });
+  if (!revealPending.size) window.removeEventListener('scroll', queueReveal);
+}
+function queueReveal() {
+  if (revealQueued) return;
+  revealQueued = true;
+  window.setTimeout(revealVisible, 60);
+}
+function revealOnScroll(elements) {
+  if (!revealEnabled) return;
+  const groups = new Map();
+  elements.forEach((element) => {
+    // Las tarjetas de una misma fila entran una tras otra.
+    const siblings = groups.get(element.parentElement) || 0;
+    groups.set(element.parentElement, siblings + 1);
+    element.style.setProperty('--reveal-delay', Math.min(siblings, 4) * 80 + 'ms');
+    element.classList.add('revelar');
+    revealPending.add(element);
+  });
+  window.addEventListener('scroll', queueReveal, { passive: true });
+  queueReveal();
+}
+if (document.querySelector('.how-section')) {
+  revealOnScroll(document.querySelectorAll('.how-heading, .how-steps article, #la-foto .section-intro, .tip-grid .offer, #precios .section-intro, .faq-intro, .faq-list details'));
+  catalogPromise.then(() => revealOnScroll(document.querySelectorAll('.size-card, .size-compare'))).catch(() => {});
+}

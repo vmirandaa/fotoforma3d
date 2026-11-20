@@ -49,4 +49,12 @@ Cada reserva envía dos correos: un aviso al taller (al responderlo le escribes 
 
 El envío usa el paquete `nodemailer`: ejecuta `npm install` una vez antes de `npm start`.
 
+## Página no encontrada
+
+`404.html` aparece cuando alguien entra a una dirección que no existe. GitHub Pages la usa sola; el servidor la entrega a los navegadores y responde en JSON a todo lo demás.
+
+## Estilos
+
+Todas las páginas usan una sola hoja, `sitio.css`, dividida en secciones con su título. El orden importa: cada sección puede ajustar a las anteriores y la de celular va al final.
+
 Las vistas previas en curso se mantienen en memoria, así que se pierden al reiniciar el servidor; las reservas ya registradas no.
