@@ -764,3 +764,19 @@ h1 em, h2 em { font-family: var(--heading); font-style: italic; font-weight: 400
   .theme-dark .cta-fija { background: #202621; border-color: #39433b; box-shadow: 0 10px 30px #00000066; }
 }
 @media (max-width: 700px) and (prefers-reduced-motion: reduce) { .cta-fija { transition: none; } }
+
+/* Franja de mensajes: en celular no cabe, así que se desliza de forma continua (con una copia para que no haya corte) */
+.ticker-copia { display: none !important; }
+@media (max-width: 700px) {
+  .ticker { justify-content: flex-start; }
+  .ticker > div, .ticker > .ticker-copia { display: flex !important; flex: none; min-width: max-content; justify-content: flex-start; padding-right: 17px; animation: ticker-desliza 28s linear infinite; }
+  .ticker > div::after { content: '✳'; color: var(--lime); font-size: 13px; }
+  .theme-dark .ticker > div::after { color: #b6d9bd; }
+  @keyframes ticker-desliza { to { transform: translateX(-100%); } }
+}
+@media (max-width: 700px) and (prefers-reduced-motion: reduce) {
+  .ticker { height: auto; padding: 12px 5%; }
+  .ticker > div { animation: none; flex-wrap: wrap; justify-content: center; min-width: 0; white-space: normal; text-align: center; gap: 8px 14px; padding-right: 0; }
+  .ticker > div::after { content: none; }
+  .ticker > .ticker-copia { display: none !important; }
+}
