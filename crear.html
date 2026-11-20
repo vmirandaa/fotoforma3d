@@ -104,7 +104,19 @@
           <button class="button button-dark generate-model" id="generate-model" type="submit" disabled>Ver su figura en 3D <span>↗</span></button>
           <p class="generate-hint" id="generate-hint"></p>
           <div class="generation-state" id="generation-state" role="status" aria-live="polite"></div>
-          <div class="generation-progress" id="generation-progress" hidden><div class="progress-track"><span id="progress-fill"></span></div><div class="progress-label"><span id="progress-text">Enviando las fotos…</span><span id="progress-percent"></span></div></div>
+          <div class="generation-progress" id="generation-progress" hidden>
+            <div class="wait-head"><strong id="progress-text">Enviando las fotos…</strong><span class="wait-time" id="progress-time" aria-label="Tiempo transcurrido">0:00</span></div>
+            <div class="progress-track"><span id="progress-fill"></span></div>
+            <ol class="wait-steps" id="wait-steps">
+              <li data-step="send"><i aria-hidden="true"></i>Enviando las fotos</li>
+              <li data-step="queue"><i aria-hidden="true"></i>Revisando sus fotos</li>
+              <li data-step="shape"><i aria-hidden="true"></i>Armando su forma</li>
+              <li data-step="detail"><i aria-hidden="true"></i>Afinando orejas, patas y cola</li>
+              <li data-step="viewer"><i aria-hidden="true"></i>Abriendo la figura en 3D</li>
+            </ol>
+            <p class="wait-expect">Suele tardar entre 3 y 5 minutos. No cierres esta pestaña: si cambias de aplicación, al volver seguirá avanzando.</p>
+            <div class="wait-tip"><span>Mientras esperas</span><p id="wait-tip"></p></div>
+          </div>
           <p class="privacy-message"><span>◈</span> La vista previa es gratis y tarda unos minutos. Solo conservamos tus fotos si reservas la figura.</p>
         </form>
       </div>

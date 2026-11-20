@@ -17,7 +17,9 @@ const stateBox = document.querySelector('#generation-state');
 const progressBox = document.querySelector('#generation-progress');
 const progressFill = document.querySelector('#progress-fill');
 const progressText = document.querySelector('#progress-text');
-const progressPercent = document.querySelector('#progress-percent');
+const progressTime = document.querySelector('#progress-time');
+const waitSteps = document.querySelector('#wait-steps');
+const waitTip = document.querySelector('#wait-tip');
 const viewer = document.querySelector('#model-viewer');
 const modelState = document.querySelector('#model-state');
 const modelStage = document.querySelector('#model-stage');
@@ -302,23 +304,97 @@ finishColor.addEventListener('click', () => applyFinish('color'));
 
 // --- Generación de la vista previa ---
 function wait(ms) { return new Promise((resolve) => window.setTimeout(resolve, ms)); }
+
+// --- Pantalla de espera: etapas, tiempo transcurrido y consejos mientras se genera ---
+const WAIT_STEPS = {
+  send: 'Enviando las fotos…',
+  queue: 'Revisando sus fotos…',
+  shape: 'Armando su forma…',
+  detail: 'Afinando orejas, patas y cola…',
+  viewer: 'Abriendo la figura en 3D…'
+};
+const WAIT_TIPS = [
+  'La medida de cada talla es el lado más largo de la figura. En la portada puedes compararlas con una taza.',
+  'La figura llega en blanco, lista para pintar o para dejarla así. Si prefieres, al reservar puedes pedirla pintada por el taller.',
+  'Reservar no te cobra nada todavía: te escribimos para confirmar el pago y el envío.',
+  'Con el código de tu reserva y tu correo puedes ver en qué etapa va en «Mi pedido».',
+  'Si la figura no te convence, puedes probar con otras fotos: un ángulo de costado suele mejorar mucho el resultado.',
+  'Los detalles muy finos, como bigotes o pelos sueltos, se simplifican para que la figura se pueda imprimir.'
+];
+const PAGE_TITLE = document.title;
+const waitState = { started: 0, step: '', clock: null, tipIndex: 0 };
+function formatElapsed(ms) {
+  const seconds = Math.max(0, Math.floor(ms / 1000));
+  return Math.floor(seconds / 60) + ':' + String(seconds % 60).padStart(2, '0');
+}
+function setWaitStep(step) {
+  waitState.step = step;
+  const order = Object.keys(WAIT_STEPS);
+  const current = order.indexOf(step);
+  waitSteps.querySelectorAll('li').forEach((item) => {
+    const index = order.indexOf(item.dataset.step);
+    item.classList.toggle('hecho', index < current);
+    item.classList.toggle('actual', index === current);
+  });
+  progressText.textContent = WAIT_STEPS[step];
+}
+function tickWait() {
+  const elapsed = Date.now() - waitState.started;
+  progressTime.textContent = formatElapsed(elapsed);
+  // Avance estimado: se acerca al 95 % sin llegar, porque el servicio no informa un porcentaje real.
+  const estimate = 4 + 91 * (1 - Math.exp(-elapsed / 150000));
+  progressFill.style.width = estimate.toFixed(1) + '%';
+  const seconds = Math.floor(elapsed / 1000);
+  if (seconds > 0 && seconds % 10 === 0) showWaitTip(waitState.tipIndex + 1);
+}
+function showWaitTip(index) {
+  waitState.tipIndex = index % WAIT_TIPS.length;
+  waitTip.textContent = WAIT_TIPS[waitState.tipIndex];
+}
+function startWaiting() {
+  waitState.started = Date.now();
+  progressBox.hidden = false;
+  progressBox.classList.remove('terminado', 'fallido');
+  progressFill.style.width = '4%';
+  progressTime.textContent = '0:00';
+  showWaitTip(Math.floor(Math.random() * WAIT_TIPS.length));
+  setWaitStep('send');
+  window.clearInterval(waitState.clock);
+  waitState.clock = window.setInterval(tickWait, 1000);
+  progressBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+function stopWaiting(ok) {
+  window.clearInterval(waitState.clock);
+  progressBox.classList.add(ok ? 'terminado' : 'fallido');
+  if (ok) {
+    waitSteps.querySelectorAll('li').forEach((item) => { item.classList.add('hecho'); item.classList.remove('actual'); });
+    progressFill.style.width = '100%';
+    progressText.textContent = 'La vista previa está lista.';
+    // Si el cliente se fue a otra pestaña, el título le avisa que ya puede volver.
+    if (document.hidden) document.title = '✓ Su figura está lista · FORMA';
+  } else {
+    progressText.textContent = 'No se pudo completar.';
+    if (document.hidden) document.title = 'No se pudo crear la figura · FORMA';
+  }
+}
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) document.title = PAGE_TITLE;
+});
+
 async function pollTask(id) {
   const deadline = Date.now() + 20 * 60 * 1000;
-  let delay = 5000;
-  let elapsed = 0;
+  let delay = 4000;
   while (Date.now() < deadline) {
     await wait(delay);
-    elapsed += delay;
-    const approx = Math.min(92, Math.round(10 + (elapsed / (20 * 60 * 1000)) * 80));
-    progressFill.style.width = approx + '%';
-    progressPercent.textContent = approx + '%';
-    progressText.textContent = elapsed < 30000 ? 'Modelando su forma…' : 'Afinando orejas, patas y cola…';
     const response = await fetch('/api/status/' + encodeURIComponent(id));
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || 'No se pudo consultar el avance.');
     if (result.status === 'failed') throw new Error(result.error || 'No pudimos crear la figura con esta foto.');
     if (result.status === 'done') return result;
-    delay = Math.min(delay + 5000, 30000);
+    if (result.status === 'generating' || result.status === 'downloading') {
+      setWaitStep(Date.now() - waitState.started > 100000 || result.status === 'downloading' ? 'detail' : 'shape');
+    }
+    delay = Math.min(delay + 2000, 15000);
   }
   throw new Error('La vista previa está tardando más de lo esperado. Inténtalo nuevamente más tarde.');
 }
@@ -335,10 +411,7 @@ async function runGeneration() {
   if (generationBusy || !selectedFiles.length) return;
   generationBusy = true;
   syncButtons();
-  progressBox.hidden = false;
-  progressFill.style.width = '3%';
-  progressPercent.textContent = '';
-  progressText.textContent = 'Enviando las fotos…';
+  startWaiting();
   showState('');
   setModelState('PREPARANDO LA FIGURA', false);
   generateButton.innerHTML = 'Creando la vista previa… <span>◌</span>';
@@ -358,9 +431,10 @@ async function runGeneration() {
     const started = await response.json();
     if (!response.ok) throw new Error(started.error || 'No se pudo iniciar la vista previa.');
     setModelState('MODELANDO', false);
-    progressText.textContent = 'Mirando sus fotos…';
+    setWaitStep('queue');
     const completed = await pollTask(started.id);
     if (!completed.modelReady) throw new Error('La figura se generó, pero no se pudo preparar la vista previa.');
+    setWaitStep('viewer');
     await waitForViewerLoad('/api/model/' + encodeURIComponent(started.id) + '?v=' + Date.now());
     taskId = started.id;
     hasGeneratedModel = true;
@@ -371,16 +445,14 @@ async function runGeneration() {
     viewerHint.hidden = false;
     figureTitle.textContent = petName ? 'La figura de ' + petName : 'Su figura';
     setModelState('VISTA PREVIA LISTA', true);
-    progressFill.style.width = '100%';
-    progressPercent.textContent = '100%';
-    progressText.textContent = 'La vista previa está lista.';
+    stopWaiting(true);
     showState('Listo. Revisa la figura y, si te gusta, elige el tamaño.', 'success');
     setOrderStatus('Revisa el tamaño y completa tus datos para reservar.');
     generateButton.innerHTML = 'Probar con otras fotos <span>↗</span>';
     setActiveTab('view');
   } catch (error) {
     setModelState(hasGeneratedModel ? 'VISTA PREVIA ANTERIOR' : 'SIN FIGURA TODAVÍA', hasGeneratedModel);
-    progressText.textContent = 'No se pudo completar.';
+    stopWaiting(false);
     showState(error.message || 'Ocurrió un error al crear la vista previa.');
     generateButton.innerHTML = 'Intentar de nuevo <span>↗</span>';
   } finally {
