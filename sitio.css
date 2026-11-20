@@ -817,3 +817,8 @@ h1 em, h2 em { font-family: var(--heading); font-style: italic; font-weight: 400
    detrás de ellas se pinta el mismo color de la sección de precios, que va justo antes. */
 .price-section + .faq-section { position: relative; }
 .price-section + .faq-section::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 40px; background: var(--soft); z-index: -1; }
+
+/* En celular la lista de consejos va sin recuadro propio: ya está dentro del recuadro del formulario */
+@media (max-width: 700px) {
+  .photo-checklist, .theme-dark .photo-checklist { border: 0; background: none; border-radius: 0; padding: 0; margin: 4px 0 20px; }
+}
