@@ -43,14 +43,28 @@ async function call(path, { method = 'GET', json, form } = {}) {
       body: json ? JSON.stringify(json) : form,
       signal: AbortSignal.timeout(90_000)
     });
-    if ((response.status === 429 || response.status >= 500) && attempt < 4) { await wait(retryDelay(response, attempt)); continue; }
+    if ((response.status === 429 || response.status >= 500) && attempt < 4) {
+      await wait(retryDelay(response, attempt));
+      continue;
+    }
     const result = await readJson(response);
     if (!response.ok || result.code !== 0) {
       const code = Number(result.code);
-      throw new ProviderError('Tripo ' + method + ' ' + path + ': código ' + result.code + ' · ' + (result.message || 'HTTP ' + response.status) + technicalNote(code), {
-        status: response.status >= 400 ? response.status : 502,
-        userMessage: userMessageFor(code)
-      });
+      throw new ProviderError(
+        'Tripo ' +
+          method +
+          ' ' +
+          path +
+          ': código ' +
+          result.code +
+          ' · ' +
+          (result.message || 'HTTP ' + response.status) +
+          technicalNote(code),
+        {
+          status: response.status >= 400 ? response.status : 502,
+          userMessage: userMessageFor(code)
+        }
+      );
     }
     return result.data;
   }
@@ -60,7 +74,11 @@ async function call(path, { method = 'GET', json, form } = {}) {
 async function upload(photo, index) {
   const form = new FormData();
   const extension = photo.type === 'image/png' ? 'png' : 'jpg';
-  form.append('file', new Blob([photo.bytes], { type: photo.type }), photo.filename || ('foto-' + (index + 1) + '.' + extension));
+  form.append(
+    'file',
+    new Blob([photo.bytes], { type: photo.type }),
+    photo.filename || 'foto-' + (index + 1) + '.' + extension
+  );
   const data = await call('/files', { method: 'POST', form });
   if (!data?.file_token) throw new ProviderError('Tripo /files no devolvió file_token');
   return data.file_token;
@@ -87,7 +105,10 @@ export const tripo = {
       return { taskId: data.task_id, mode: 'multivista', views: Object.keys(byView) };
     }
     const main = byView.front || photos[0];
-    const data = await call('/generation/image-to-model', { method: 'POST', json: { input: await upload(main, 0), ...options } });
+    const data = await call('/generation/image-to-model', {
+      method: 'POST',
+      json: { input: await upload(main, 0), ...options }
+    });
     return { taskId: data.task_id, mode: 'una foto' };
   },
 
@@ -95,15 +116,33 @@ export const tripo = {
     const data = await call('/tasks/' + encodeURIComponent(ref.taskId));
     const progress = Number(data.progress) || 0;
     switch (data.status) {
-      case 'queued': return { state: 'waiting', progress };
-      case 'running': return { state: 'generating', progress };
+      case 'queued':
+        return { state: 'waiting', progress };
+      case 'running':
+        return { state: 'generating', progress };
       case 'success':
-        if (!data.output?.model_url) return { state: 'failed', error: 'El servicio terminó, pero no entregó el modelo.' };
+        if (!data.output?.model_url)
+          return { state: 'failed', error: 'El servicio terminó, pero no entregó el modelo.' };
         return { state: 'done', modelUrl: data.output.model_url };
-      case 'failed': case 'cancelled': case 'banned': case 'expired':
-        console.error('Tripo: la tarea ' + ref.taskId + ' terminó en "' + data.status + '"' + (data.error_code ? ' (código ' + data.error_code + ')' : '') + (data.error_message ? ': ' + data.error_message : ''));
-        return { state: 'failed', error: 'No pudimos crear la figura con estas fotos. Prueba con otras, con buena luz y la mascota completa.' };
-      default: return { state: 'generating', progress }; // "unknown": se sigue esperando
+      case 'failed':
+      case 'cancelled':
+      case 'banned':
+      case 'expired':
+        console.error(
+          'Tripo: la tarea ' +
+            ref.taskId +
+            ' terminó en "' +
+            data.status +
+            '"' +
+            (data.error_code ? ' (código ' + data.error_code + ')' : '') +
+            (data.error_message ? ': ' + data.error_message : '')
+        );
+        return {
+          state: 'failed',
+          error: 'No pudimos crear la figura con estas fotos. Prueba con otras, con buena luz y la mascota completa.'
+        };
+      default:
+        return { state: 'generating', progress }; // "unknown": se sigue esperando
     }
   }
 };

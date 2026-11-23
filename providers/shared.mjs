@@ -11,8 +11,12 @@ export class ProviderError extends Error {
 
 export async function readJson(response) {
   const text = await response.text();
-  try { return JSON.parse(text); } catch {
-    throw new ProviderError('Respuesta inesperada del servicio 3D (HTTP ' + response.status + '): ' + text.slice(0, 200));
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new ProviderError(
+      'Respuesta inesperada del servicio 3D (HTTP ' + response.status + '): ' + text.slice(0, 200)
+    );
   }
 }
 

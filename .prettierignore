@@ -1,0 +1,5 @@
+node_modules/
+css/
+.hallmark/
+pedidos/
+package-lock.json

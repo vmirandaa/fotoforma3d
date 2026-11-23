@@ -21,14 +21,23 @@ async function postJson(endpoint, payload) {
       body: JSON.stringify(payload),
       signal: AbortSignal.timeout(90_000)
     });
-    if (response.status === 429 && attempt < 4) { await wait(retryDelay(response, attempt)); continue; }
+    if (response.status === 429 && attempt < 4) {
+      await wait(retryDelay(response, attempt));
+      continue;
+    }
     const result = await readJson(response);
     if (!response.ok || result.error) {
-      throw new ProviderError('Rodin ' + endpoint + ': ' + (result.message || result.error || 'HTTP ' + response.status), { status: response.status || 502 });
+      throw new ProviderError(
+        'Rodin ' + endpoint + ': ' + (result.message || result.error || 'HTTP ' + response.status),
+        { status: response.status || 502 }
+      );
     }
     return result;
   }
-  throw new ProviderError('Rodin ocupado (429)', { status: 429, userMessage: 'El servicio 3D está ocupado. Espera un momento e inténtalo nuevamente.' });
+  throw new ProviderError('Rodin ocupado (429)', {
+    status: 429,
+    userMessage: 'El servicio 3D está ocupado. Espera un momento e inténtalo nuevamente.'
+  });
 }
 
 export const rodin = {
@@ -40,7 +49,11 @@ export const rodin = {
   async start({ photos, prompt }) {
     const upstream = new FormData();
     photos.forEach((photo, index) => {
-      upstream.append('images', new Blob([photo.bytes], { type: photo.type }), photo.filename || ('reference-' + (index + 1)));
+      upstream.append(
+        'images',
+        new Blob([photo.bytes], { type: photo.type }),
+        photo.filename || 'reference-' + (index + 1)
+      );
       if (photo.label) upstream.append('image_label', photo.label);
     });
     upstream.append('tier', previewTier());
@@ -69,7 +82,8 @@ export const rodin = {
     const status = await postJson('/status', { subscription_key: ref.subscriptionKey });
     const jobs = Array.isArray(status.jobs) ? status.jobs : [];
     if (!jobs.length) return { state: 'waiting' };
-    if (jobs.some((job) => job.status === 'Failed')) return { state: 'failed', error: status.message || 'El servicio no pudo completar el modelo.' };
+    if (jobs.some((job) => job.status === 'Failed'))
+      return { state: 'failed', error: status.message || 'El servicio no pudo completar el modelo.' };
     if (!jobs.every((job) => job.status === 'Done')) {
       return { state: jobs.some((job) => job.status === 'Generating') ? 'generating' : 'waiting' };
     }

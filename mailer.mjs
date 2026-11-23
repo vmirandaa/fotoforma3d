@@ -4,7 +4,10 @@
 const SPECIES_LABELS = { perro: 'Perro', gato: 'Gato', otro: 'Otro animal' };
 
 function escapeHtml(value) {
-  return String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
+  return String(value ?? '').replace(
+    /[&<>"']/g,
+    (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]
+  );
 }
 function formatPrice(value) {
   return '$' + Number(value).toLocaleString('es-CL');
@@ -28,12 +31,28 @@ export function mailConfig(env = process.env) {
 }
 
 function layout(title, rows, closing) {
-  const cells = rows.map(([label, value]) => '<tr><td style="padding:6px 16px 6px 0;color:#71776e;font-size:13px;vertical-align:top">' + escapeHtml(label)
-    + '</td><td style="padding:6px 0;font-size:14px">' + escapeHtml(value) + '</td></tr>').join('');
-  return '<div style="font-family:Arial,Helvetica,sans-serif;color:#242922;max-width:520px">'
-    + '<h2 style="font-size:20px;margin:0 0 14px">' + escapeHtml(title) + '</h2>'
-    + '<table style="border-collapse:collapse">' + cells + '</table>'
-    + '<p style="font-size:14px;line-height:1.6;margin:18px 0 0">' + escapeHtml(closing) + '</p></div>';
+  const cells = rows
+    .map(
+      ([label, value]) =>
+        '<tr><td style="padding:6px 16px 6px 0;color:#71776e;font-size:13px;vertical-align:top">' +
+        escapeHtml(label) +
+        '</td><td style="padding:6px 0;font-size:14px">' +
+        escapeHtml(value) +
+        '</td></tr>'
+    )
+    .join('');
+  return (
+    '<div style="font-family:Arial,Helvetica,sans-serif;color:#242922;max-width:520px">' +
+    '<h2 style="font-size:20px;margin:0 0 14px">' +
+    escapeHtml(title) +
+    '</h2>' +
+    '<table style="border-collapse:collapse">' +
+    cells +
+    '</table>' +
+    '<p style="font-size:14px;line-height:1.6;margin:18px 0 0">' +
+    escapeHtml(closing) +
+    '</p></div>'
+  );
 }
 function plain(title, rows, closing) {
   return title + '\n\n' + rows.map(([label, value]) => label + ': ' + value).join('\n') + '\n\n' + closing + '\n';
@@ -61,16 +80,21 @@ export function buildOrderEmails(order, config) {
   if (order.notes) shopRows.push(['Comentarios', order.notes]);
   shopRows.push(['Modelo', order.modelFile ? 'Guardado como ' + order.modelFile : 'No se pudo guardar una copia']);
   const shopTitle = 'Nueva reserva ' + order.code;
-  const shopClosing = 'Responde este correo para escribirle directamente al cliente. El detalle y el modelo están en el panel de reservas.';
+  const shopClosing =
+    'Responde este correo para escribirle directamente al cliente. El detalle y el modelo están en el panel de reservas.';
 
   const customerRows = [
     ['Código de reserva', order.code],
-    ['Figura', (order.petName ? 'La figura de ' + order.petName : 'Tu figura') + ', ' + order.measure + ', ' + finish + extras],
+    [
+      'Figura',
+      (order.petName ? 'La figura de ' + order.petName : 'Tu figura') + ', ' + order.measure + ', ' + finish + extras
+    ],
     ...(quantity > 1 ? [['Cantidad', quantity + ' figuras iguales']] : []),
     ['Precio', formatPrice(order.price) + ' (el envío se cotiza según tu comuna)']
   ];
   const customerTitle = 'Hola ' + order.name + ', recibimos tu reserva';
-  const customerClosing = 'Pronto te escribiremos para confirmar el pago y el envío. Puedes ver en qué etapa va tu figura en la sección "Mi pedido" del sitio, con este código y tu correo. Si tienes alguna duda, responde este correo.';
+  const customerClosing =
+    'Pronto te escribiremos para confirmar el pago y el envío. Puedes ver en qué etapa va tu figura en la sección "Mi pedido" del sitio, con este código y tu correo. Si tienes alguna duda, responde este correo.';
 
   return [
     {
@@ -104,7 +128,9 @@ export async function sendOrderEmails(order) {
       secure: config.secure,
       auth: { user: config.user, pass: config.pass }
     });
-    const [shop, customer] = await Promise.allSettled(buildOrderEmails(order, config).map((message) => transport.sendMail(message)));
+    const [shop, customer] = await Promise.allSettled(
+      buildOrderEmails(order, config).map((message) => transport.sendMail(message))
+    );
     const error = [shop, customer].find((result) => result.status === 'rejected')?.reason?.message;
     return { configured: true, shop: shop.status === 'fulfilled', customer: customer.status === 'fulfilled', error };
   } catch (error) {

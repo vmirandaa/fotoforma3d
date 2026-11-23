@@ -17,10 +17,14 @@ import { rodin } from './rodin.mjs';
 const PROVIDERS = { tripo, rodin };
 
 export function activeProvider() {
-  const wanted = String(process.env.PROVIDER || 'tripo').trim().toLowerCase();
+  const wanted = String(process.env.PROVIDER || 'tripo')
+    .trim()
+    .toLowerCase();
   const provider = PROVIDERS[wanted];
   if (!provider) {
-    console.warn('PROVIDER="' + wanted + '" no existe. Opciones: ' + Object.keys(PROVIDERS).join(', ') + '. Se usa tripo.');
+    console.warn(
+      'PROVIDER="' + wanted + '" no existe. Opciones: ' + Object.keys(PROVIDERS).join(', ') + '. Se usa tripo.'
+    );
     return tripo;
   }
   return provider;
