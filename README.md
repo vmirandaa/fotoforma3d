@@ -18,10 +18,20 @@ No pongas la clave dentro de los archivos HTML o JavaScript del navegador ni la 
 - `css/main.css`: la hoja de estilos que usan las páginas. Se genera desde `scss/`.
 - `scss/`: los estilos. `_tokens.scss` (colores, tipos y espacios), `_base.scss`, `_components.scss` (barra, botones, pie), `_forms.scss` y una parte por página en `scss/pages/`; `main.scss` los une y `_mixins.scss` trae atajos.
 - `design.md`: el sistema de diseño fijo (colores, tipos, controles y reglas). Léelo antes de cambiar el diseño.
-- `js/`: `main.js` (común a todas las páginas: tema, menú, catálogo), `creator.js` (creador), `account.js` (Mi pedido e ingreso) y `admin.js` (panel).
+- `js/`: módulos del navegador (cada archivo dice con `import` qué usa de los otros). Por ser módulos, las páginas deben abrirse desde el servidor (`npm start`) o GitHub Pages, no con doble clic en el archivo.
+  - `main.js` va en todas las páginas (tema, menú y la portada); `creator.js` (creador), `account.js` (Mi pedido e ingreso) y `admin.js` (panel) van en la suya.
+  - `creator/`: las partes del creador. `photos.js` (subida libre o por ángulos), `wizard.js` (el formulario en tres pantallas en celular), `waiting.js` (pantalla de espera), `order.js` (tamaño, extras, total y reserva) y `shared.js` (el estado que comparten). `creator.js` las coordina y genera la vista previa.
+  - Compartido: `catalog.js` (catálogo y precios), `viewer.js` (visor 3D), `dom.js` (el ayudante `el` para armar elementos) y `rules.js`.
+  - `rules.js` lo usa también el servidor: límites de fotos, código de reserva, cantidad máxima, nombre de la base y el cálculo del precio. Si cambias una regla, cambia en los dos lados.
 - `data/catalog.json`: tallas, precios y extras.
 - `assets/`: imágenes (`images/`) y el modelo de muestra de la portada (`models/`).
-- `server.mjs`: el servidor (vista previa, reservas, seguimiento y panel); `mailer.mjs`: los correos.
+- `server.mjs`: el servidor. Solo decide qué atiende cada dirección; el trabajo está en `lib/`.
+- `lib/`: el servidor por tema.
+  - `config.mjs` (lee `.env`; carpetas, puerto y servicio 3D), `http.mjs` (responder y leer solicitudes).
+  - `previews.mjs` (fotos → servicio 3D → modelo, con los límites por visitante), `orders.mjs` (reservas y seguimiento), `admin.mjs` (ingreso y panel), `static.mjs` (páginas e imágenes).
+  - `order-rules.mjs` (extras y el texto para el servicio 3D) y `pass.mjs` (protección contra envíos automáticos): reglas sin disco ni red, con pruebas.
+- `mailer.mjs`: los correos.
+- `test/`: pruebas automáticas de las reglas, el pase y los correos.
 - `providers/`: los servicios de generación 3D, uno por archivo (`tripo.mjs`, `rodin.mjs`); `index.mjs` elige cuál usar.
 - `pedidos/`: las reservas guardadas. No entra a git.
 
@@ -101,6 +111,17 @@ Los estilos se escriben en la carpeta `scss/`, separados por tema: los tokens (`
 - No edites `css/main.css` a mano: se reemplaza al regenerarlo.
 - Antes de subir a GitHub, regenera `css/main.css` y súbelo junto con los cambios de `scss/`: GitHub Pages publica el `.css`, no compila el `.scss`.
 
-`scss/_mixins.scss` trae atajos para escribir estilos nuevos: `@include celular { … }`, `@include computador { … }`, `@include oscuro { … }` y `@include con-movimiento { … }`. Para usarlos, agrega `@use 'mixins' as *;` al principio del archivo. Los colores son variables de CSS definidas en `_tokens.scss` (`var(--color-accent)`, `var(--color-paper-2)`…), porque cambian solas en modo oscuro; no escribas colores sueltos fuera de ese archivo.
+`scss/_mixins.scss` trae atajos para escribir estilos nuevos: `@include phone { … }` (celular), `@include desktop { … }` (computador), `@include dark-mode { … }` (modo oscuro) y `@include with-motion { … }` (si la persona no pidió reducir el movimiento). Para usarlos, agrega `@use 'mixins' as *;` al principio del archivo. Los colores son variables de CSS definidas en `_tokens.scss` (`var(--color-accent)`, `var(--color-paper-2)`…), porque cambian solas en modo oscuro; no escribas colores sueltos fuera de ese archivo.
 
 Las vistas previas en curso se mantienen en memoria, así que se pierden al reiniciar el servidor; las reservas ya registradas no.
+
+## Revisar el código
+
+Con `npm install` hecho, estos comandos revisan el JavaScript (no cambian nada del sitio):
+
+- `npm test`: corre las pruebas de `test/` (precios y extras, pase contra spam, correos).
+- `npm run lint`: ESLint avisa de variables sin uso, nombres mal escritos y errores comunes.
+- `npm run format`: Prettier deja el formato parejo en todos los `.js` y `.mjs` (comillas, sangría, largo de línea).
+- `npm run check`: los tres a la vez, sin modificar archivos. Conviene correrlo antes de cada commit.
+
+Para que VS Code formatee al guardar, instala la extensión Prettier: toma la configuración de `.prettierrc.json`.
