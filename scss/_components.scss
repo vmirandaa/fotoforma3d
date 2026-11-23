@@ -188,9 +188,9 @@
 .footer-compact { padding-block: var(--space-2xl) var(--space-lg); .wordmark { font-size: clamp(2rem, 4vw, 3rem); } }
 
 // --- Botón fijo en celular (portada) ---
-.cta-fija { display: none; }
-@include celular {
-  .cta-fija {
+.sticky-cta { display: none; }
+@include phone {
+  .sticky-cta {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -208,17 +208,17 @@
     transition: transform var(--dur-long) var(--ease-out), opacity var(--dur-short) var(--ease-out);
   }
   // Oculto solo cuando hay script que lo muestre al bajar.
-  .js .cta-fija:not(.visible) {
+  .js .sticky-cta:not(.visible) {
     opacity: 0;
     pointer-events: none;
     transform: translateY(140%);
   }
-  .cta-fija {
+  .sticky-cta {
     transition: transform var(--dur-long) var(--ease-out), opacity var(--dur-short) var(--ease-out);
     small { font-size: var(--text-sm); color: var(--color-muted); }
     .button { min-height: 44px; }
   }
-  .cta-fija.visible { opacity: 1; pointer-events: auto; transform: none; }
+  .sticky-cta.visible { opacity: 1; pointer-events: auto; transform: none; }
 }
 
 // --- Navegación en pantallas medianas y chicas: menú desplegable ---

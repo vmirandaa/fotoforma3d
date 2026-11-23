@@ -1,7 +1,5 @@
 // Página no encontrada (404.html): la foto real a un lado y el camino de vuelta al otro.
 
-@use '../mixins' as *;
-
 .error-main { padding-block: var(--space-2xl) var(--space-3xl); }
 .error-inner {
   display: grid;

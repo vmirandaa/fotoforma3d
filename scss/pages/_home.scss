@@ -61,7 +61,7 @@
   object-fit: contain;
   transition: opacity var(--dur-long) var(--ease-out);
 }
-.hero-visual.con-figura .hero-poster { opacity: 0; }
+.hero-visual.has-figure .hero-poster { opacity: 0; }
 .hero-model {
   position: absolute;
   inset: 0;
@@ -70,7 +70,7 @@
   model-viewer { width: 100%; height: 100%; --poster-color: transparent; }
   model-viewer:focus-visible, model-viewer:focus-within { outline: 2px solid var(--color-focus); outline-offset: -4px; }
 }
-.hero-visual.con-figura .hero-model { opacity: 1; }
+.hero-visual.has-figure .hero-model { opacity: 1; }
 
 // --- Cómo funciona: una franja con los tres pasos reales, numerados ---
 .how-section {
@@ -274,8 +274,8 @@
   font-variant-numeric: tabular-nums;
   strong { font-size: var(--text-sm); font-weight: 600; color: var(--color-ink); }
 }
-.compare-item.destacada .compare-label strong { color: var(--color-accent); }
-.compare-picker, .size-compare .solo-celular { display: none; }
+.compare-item.featured .compare-label strong { color: var(--color-accent); }
+.compare-picker, .size-compare .phone-only { display: none; }
 
 // --- Preguntas frecuentes: el título a la izquierda, las preguntas en filas ---
 .faq-section { padding-block: var(--section-gap); }
@@ -316,10 +316,10 @@
   details p { padding-bottom: var(--space-lg); color: var(--color-ink-2); max-width: 62ch; }
 }
 
-// --- Entrada suave al bajar (js/main.js agrega .revelar; sin script, todo queda visible) ---
-.js .revelar { opacity: 0; transform: translateY(16px); transition: opacity 0.6s var(--ease-out), transform 0.6s var(--ease-out); transition-delay: var(--reveal-delay, 0ms); }
-.js .revelar.visible { opacity: 1; transform: none; }
-@media (prefers-reduced-motion: reduce) { .js .revelar { opacity: 1; transform: none; } }
+// --- Entrada suave al bajar (js/main.js agrega .reveal; sin script, todo queda visible) ---
+.js .reveal { opacity: 0; transform: translateY(16px); transition: opacity 0.6s var(--ease-out), transform 0.6s var(--ease-out); transition-delay: var(--reveal-delay, 0ms); }
+.js .reveal.visible { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) { .js .reveal { opacity: 1; transform: none; } }
 
 // --- Pantallas medianas y chicas ---
 @media (max-width: 60rem) {
@@ -330,7 +330,7 @@
   .photos-inner, .faq-inner, .price-layout { grid-template-columns: minmax(0, 1fr); }
   .photos-section .section-intro { position: static; }
 }
-@include celular {
+@include phone {
   .tip-grid .offer { grid-template-columns: minmax(0, 1fr); }
   .size-card {
     grid-template-columns: minmax(0, 1fr) auto;
@@ -340,8 +340,8 @@
     .size-painted { justify-self: start; }
   }
   .size-compare { padding: var(--space-md) var(--space-sm); }
-  .size-compare .solo-computador { display: none; }
-  .size-compare .solo-celular { display: inline; }
+  .size-compare .desktop-only { display: none; }
+  .size-compare .phone-only { display: inline; }
   .compare-picker {
     display: flex;
     gap: var(--space-2xs);
@@ -366,7 +366,7 @@
     }
   }
   .compare-stage { --cm: clamp(6px, (100cqw - 76px) / 22.5, 15px); gap: var(--space-xl); }
-  .compare-item:not(.referencia):not(.elegida) { display: none; }
+  .compare-item:not(.reference):not(.selected) { display: none; }
   .faq-list summary { font-size: var(--text-lg); }
   .footer { padding-bottom: calc(var(--space-3xl) + var(--space-xl)); }
 }

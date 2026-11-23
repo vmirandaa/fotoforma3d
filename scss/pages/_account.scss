@@ -2,14 +2,14 @@
 
 @use '../mixins' as *;
 
-.cuenta-main { padding-block: var(--space-2xl) var(--space-3xl); }
-.cuenta-layout {
+.account-main { padding-block: var(--space-2xl) var(--space-3xl); }
+.account-layout {
   display: grid;
   grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
   gap: var(--space-2xl) var(--gap-columns);
   align-items: start;
 }
-.cuenta-hero {
+.account-hero {
   display: flex;
   flex-direction: column;
   gap: var(--space-lg);
@@ -17,10 +17,10 @@
   top: calc(var(--nav-height) + var(--space-xl));
   h1 { font-size: var(--text-display-s); max-width: 14ch; }
 }
-.cuenta-body { display: flex; flex-direction: column; gap: var(--space-lg); min-width: 0; }
+.account-body { display: flex; flex-direction: column; gap: var(--space-lg); min-width: 0; }
 
 // Pestañas: cliente o administrador
-.cuenta-tabs {
+.account-tabs {
   display: inline-grid;
   grid-auto-flow: column;
   grid-auto-columns: minmax(0, 1fr);
@@ -32,7 +32,7 @@
   border-radius: var(--radius-pill);
   background: var(--color-paper-2);
 }
-.cuenta-tab {
+.account-tab {
   min-height: 40px;
   padding: 0 var(--space-lg);
   border: 0;
@@ -46,9 +46,9 @@
   &:active { transform: translateY(1px); }
   &[aria-selected="true"] { background: var(--color-accent); color: var(--color-accent-ink); }
 }
-.cuenta-panel[hidden] { display: none; }
+.account-panel[hidden] { display: none; }
 
-.cuenta-card {
+.account-card {
   display: flex;
   flex-direction: column;
   gap: var(--space-lg);
@@ -59,14 +59,14 @@
   h2 { font-size: var(--text-xl); }
   > p { color: var(--color-ink-2); }
 }
-.cuenta-form { .button { align-self: flex-start; } .field-block { max-width: 34rem; } }
-.cuenta-message {
+.account-form { .button { align-self: flex-start; } .field-block { max-width: 34rem; } }
+.account-message {
   font-size: var(--text-sm);
   color: var(--color-ink-2);
   &:empty { display: none; }
   &.error { color: var(--color-error); }
 }
-.cuenta-sesion {
+.account-session {
   padding: var(--space-sm) var(--space-md);
   border-radius: var(--radius-field);
   background: var(--color-surface);
@@ -76,8 +76,8 @@
 }
 
 // Resultado del seguimiento
-.seguimiento[hidden] { display: none; }
-.seguimiento-head {
+.tracking[hidden] { display: none; }
+.tracking-head {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
@@ -86,7 +86,7 @@
   h2 { font-size: var(--text-2xl); font-variant-numeric: tabular-nums; }
   p { font-size: var(--text-sm); color: var(--color-muted); }
 }
-.seguimiento-cancelada {
+.tracking-cancelled {
   padding: var(--space-sm) var(--space-md);
   border-radius: var(--radius-field);
   background: var(--color-error-soft);
@@ -95,7 +95,7 @@
   &[hidden] { display: none; }
 }
 // La línea de etapas: recibida, contactada, pagada, enviada
-.seguimiento-pasos {
+.tracking-steps {
   list-style: none;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -111,11 +111,11 @@
     strong { font-weight: 600; color: var(--color-ink-2); }
     small { font-size: var(--text-sm); line-height: 1.4; }
   }
-  li.hecho { border-top-color: var(--color-accent); strong { color: var(--color-ink); } }
-  li.actual { border-top-color: var(--color-accent); color: var(--color-ink-2); strong { color: var(--color-ink); } }
-  &.cancelada li { opacity: 0.55; }
+  li.done { border-top-color: var(--color-accent); strong { color: var(--color-ink); } }
+  li.current { border-top-color: var(--color-accent); color: var(--color-ink-2); strong { color: var(--color-ink); } }
+  &.cancelled li { opacity: 0.55; }
 }
-.paso-marca {
+.step-mark {
   display: grid;
   place-items: center;
   width: 28px;
@@ -125,10 +125,10 @@
   font-size: var(--text-sm);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
-  .hecho &, .actual & { background: var(--color-accent); border-color: var(--color-accent); color: var(--color-accent-ink); }
+  .done &, .current & { background: var(--color-accent); border-color: var(--color-accent); color: var(--color-accent-ink); }
 }
-.seguimiento-actualizado { font-size: var(--text-sm); color: var(--color-muted); &:empty { display: none; } }
-.seguimiento-datos {
+.tracking-updated { font-size: var(--text-sm); color: var(--color-muted); &:empty { display: none; } }
+.tracking-details {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--space-md);
@@ -137,8 +137,8 @@
   dt { font-size: var(--text-sm); color: var(--color-muted); }
   dd { font-weight: 600; }
 }
-.seguimiento-figura { display: flex; flex-direction: column; gap: var(--space-md); align-items: flex-start; &[hidden] { display: none; } }
-.seguimiento-visor {
+.tracking-figure { display: flex; flex-direction: column; gap: var(--space-md); align-items: flex-start; &[hidden] { display: none; } }
+.tracking-viewer {
   width: 100%;
   height: 360px;
   border-radius: var(--radius-card);
@@ -148,8 +148,8 @@
   model-viewer { width: 100%; height: 100%; --poster-color: transparent; }
   model-viewer:focus-visible, model-viewer:focus-within { outline: 2px solid var(--color-focus); outline-offset: -4px; }
 }
-.seguimiento-ayuda { font-size: var(--text-sm); color: var(--color-ink-2); a { font-weight: 600; color: var(--color-ink); } }
-.cuenta-otra {
+.tracking-help { font-size: var(--text-sm); color: var(--color-ink-2); a { font-weight: 600; color: var(--color-ink); } }
+.account-another {
   align-self: flex-start;
   min-height: 44px;
   padding: 0;
@@ -163,13 +163,13 @@
 }
 
 @media (max-width: 60rem) {
-  .cuenta-layout { grid-template-columns: minmax(0, 1fr); }
-  .cuenta-hero { position: static; h1 { max-width: none; } }
+  .account-layout { grid-template-columns: minmax(0, 1fr); }
+  .account-hero { position: static; h1 { max-width: none; } }
 }
-@include celular {
-  .cuenta-main { padding-block: var(--space-xl) var(--space-2xl); }
-  .cuenta-card { padding: var(--space-lg); }
-  .seguimiento-pasos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .seguimiento-datos { grid-template-columns: minmax(0, 1fr); }
-  .seguimiento-visor { height: 300px; }
+@include phone {
+  .account-main { padding-block: var(--space-xl) var(--space-2xl); }
+  .account-card { padding: var(--space-lg); }
+  .tracking-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .tracking-details { grid-template-columns: minmax(0, 1fr); }
+  .tracking-viewer { height: 300px; }
 }

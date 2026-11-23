@@ -145,7 +145,7 @@ legend { padding: 0; }
   &[hidden] { display: none; }
 }
 
-@include celular {
+@include phone {
   .field-block input[type="text"], .field-block input[type="email"], .field-block input[type="password"],
   .field-block input:not([type]), .field-block select, .field-block textarea { font-size: 16px; }
 }

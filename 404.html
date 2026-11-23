@@ -28,7 +28,7 @@
 </head>
 <body id="top" class="error-page">
   <!-- Aplica el modo oscuro antes de dibujar la página, para que no se vea un destello claro al abrirla (js/main.js lo mantiene después). -->
-  <script>(function () { document.documentElement.classList.add('js'); var saved = null; try { saved = localStorage.getItem('forma-theme'); } catch (e) {} if (saved === 'dark' || (saved !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches)) { document.body.classList.add('theme-dark'); document.documentElement.dataset.mode = 'dark'; var meta = document.querySelector('meta[name=theme-color]'); if (meta) meta.content = '#171b18'; } })();</script>
+  <script>(function () { document.documentElement.classList.add('js'); var saved = null; try { saved = localStorage.getItem('forma-theme'); } catch (e) {} if (saved === 'dark' || (saved !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches)) { document.documentElement.dataset.mode = 'dark'; var meta = document.querySelector('meta[name=theme-color]'); if (meta) meta.content = '#171b18'; } })();</script>
 
   <header class="header">
     <div class="container header-inner">
@@ -46,8 +46,8 @@
 
   <main class="error-main">
     <div class="container error-inner">
-      <div class="error-art" data-slot="error-foto" data-alt="Foto de una mascota">
-        <img src="assets/images/corgi-foto.jpg" width="1280" height="1917" alt="Un corgi de pie sobre las patas traseras" fetchpriority="high">
+      <div class="error-art" data-slot="error-photo" data-alt="Foto de una mascota">
+        <img src="assets/images/corgi-photo.jpg" width="1280" height="1917" alt="Un corgi de pie sobre las patas traseras" fetchpriority="high">
       </div>
       <div class="error-copy">
         <h1>Esta página salió a pasear.</h1>
@@ -79,7 +79,7 @@
   </footer>
   <script>
     // Igual que la hoja de estilos: se pide después de fijar la base.
-    document.body.appendChild(Object.assign(document.createElement('script'), { src: 'js/main.js' }));
+    document.body.appendChild(Object.assign(document.createElement('script'), { type: 'module', src: 'js/main.js' }));
   </script>
 </body>
 </html>

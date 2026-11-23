@@ -15,7 +15,7 @@
 </head>
 <body id="top" class="studio-page cuenta-page">
   <!-- Aplica el modo oscuro antes de dibujar la página, para que no se vea un destello claro al abrirla (js/main.js lo mantiene después). -->
-  <script>(function () { document.documentElement.classList.add('js'); var saved = null; try { saved = localStorage.getItem('forma-theme'); } catch (e) {} if (saved === 'dark' || (saved !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches)) { document.body.classList.add('theme-dark'); document.documentElement.dataset.mode = 'dark'; var meta = document.querySelector('meta[name=theme-color]'); if (meta) meta.content = '#171b18'; } })();</script>
+  <script>(function () { document.documentElement.classList.add('js'); var saved = null; try { saved = localStorage.getItem('forma-theme'); } catch (e) {} if (saved === 'dark' || (saved !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches)) { document.documentElement.dataset.mode = 'dark'; var meta = document.querySelector('meta[name=theme-color]'); if (meta) meta.content = '#171b18'; } })();</script>
   <header class="header">
     <div class="container header-inner">
       <a class="wordmark" href="index.html" aria-label="FORMA, inicio"><span class="brand-symbol" aria-hidden="true">F</span>FORMA<span class="wordmark-dot">.</span></a>
@@ -29,68 +29,68 @@
     </div>
   </header>
 
-  <main class="cuenta-main">
-    <div class="container cuenta-layout">
-      <section class="cuenta-hero">
+  <main class="account-main">
+    <div class="container account-layout">
+      <section class="account-hero">
         <h1>Sigue tu figura, paso a paso.</h1>
         <p class="lead">Escribe el código de tu reserva y el correo con que la hiciste para ver en qué etapa está.</p>
       </section>
 
-      <div class="cuenta-body">
-        <div class="cuenta-tabs" role="tablist" aria-label="Tipo de ingreso">
-          <button class="cuenta-tab" id="tab-cliente" type="button" role="tab" aria-selected="true" aria-controls="panel-cliente">Soy cliente</button>
-          <button class="cuenta-tab" id="tab-admin" type="button" role="tab" aria-selected="false" aria-controls="panel-admin" tabindex="-1">Administrador</button>
+      <div class="account-body">
+        <div class="account-tabs" role="tablist" aria-label="Tipo de ingreso">
+          <button class="account-tab" id="tab-customer" type="button" role="tab" aria-selected="true" aria-controls="panel-customer">Soy cliente</button>
+          <button class="account-tab" id="tab-admin" type="button" role="tab" aria-selected="false" aria-controls="panel-admin" tabindex="-1">Administrador</button>
         </div>
 
-        <section class="cuenta-panel" id="panel-cliente" role="tabpanel" aria-labelledby="tab-cliente">
-          <form class="cuenta-card cuenta-form" id="seguimiento-form" novalidate>
+        <section class="account-panel" id="panel-customer" role="tabpanel" aria-labelledby="tab-customer">
+          <form class="account-card account-form" id="tracking-form" novalidate>
             <h2>Busca tu reserva</h2>
             <p>El código viene en el correo de confirmación y empieza con F-.</p>
             <div class="field-block">
-              <label for="seguimiento-codigo">Código de reserva</label>
-              <input id="seguimiento-codigo" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="10" placeholder="F-0A1B2C3D" required>
+              <label for="tracking-code">Código de reserva</label>
+              <input id="tracking-code" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="10" placeholder="F-0A1B2C3D" required>
             </div>
             <div class="field-block">
-              <label for="seguimiento-correo">Correo</label>
-              <input id="seguimiento-correo" type="email" autocomplete="email" maxlength="120" placeholder="nombre@correo.cl" required>
+              <label for="tracking-email">Correo</label>
+              <input id="tracking-email" type="email" autocomplete="email" maxlength="120" placeholder="nombre@correo.cl" required>
             </div>
             <button class="button button-dark" type="submit">Ver mi pedido</button>
-            <p class="cuenta-message" id="seguimiento-mensaje" role="status" aria-live="polite"></p>
+            <p class="account-message" id="tracking-message" role="status" aria-live="polite"></p>
           </form>
 
-          <section class="cuenta-card seguimiento" id="seguimiento-resultado" hidden aria-labelledby="seguimiento-titulo">
-            <div class="seguimiento-head">
-              <h2 id="seguimiento-titulo"></h2>
-              <p id="seguimiento-fecha"></p>
+          <section class="account-card tracking" id="tracking-result" hidden aria-labelledby="tracking-title">
+            <div class="tracking-head">
+              <h2 id="tracking-title"></h2>
+              <p id="tracking-date"></p>
             </div>
-            <p class="seguimiento-cancelada" id="seguimiento-cancelada" hidden>Esta reserva fue cancelada. Si crees que es un error, escríbenos.</p>
-            <ol class="seguimiento-pasos" id="seguimiento-pasos"></ol>
-            <p class="seguimiento-actualizado" id="seguimiento-actualizado"></p>
-            <dl class="seguimiento-datos" id="seguimiento-datos"></dl>
-            <div class="seguimiento-figura" id="seguimiento-figura" hidden>
-              <button class="button button-light" id="seguimiento-ver-figura" type="button">Ver su figura en 3D</button>
-              <div class="seguimiento-visor" id="seguimiento-visor" hidden></div>
+            <p class="tracking-cancelled" id="tracking-cancelled" hidden>Esta reserva fue cancelada. Si crees que es un error, escríbenos.</p>
+            <ol class="tracking-steps" id="tracking-steps"></ol>
+            <p class="tracking-updated" id="tracking-updated"></p>
+            <dl class="tracking-details" id="tracking-details"></dl>
+            <div class="tracking-figure" id="tracking-figure" hidden>
+              <button class="button button-light" id="tracking-view-figure" type="button">Ver su figura en 3D</button>
+              <div class="tracking-viewer" id="tracking-viewer" hidden></div>
             </div>
-            <p class="seguimiento-ayuda">¿Dudas sobre tu pedido? <a id="seguimiento-contacto" href="mailto:hola@forma3d.cl">Escríbenos</a> con tu código.</p>
-            <button class="cuenta-otra" id="seguimiento-otra" type="button">Buscar otra reserva</button>
+            <p class="tracking-help">¿Dudas sobre tu pedido? <a id="tracking-contact" href="mailto:hola@forma3d.cl">Escríbenos</a> con tu código.</p>
+            <button class="account-another" id="tracking-another" type="button">Buscar otra reserva</button>
           </section>
         </section>
 
-        <section class="cuenta-panel" id="panel-admin" role="tabpanel" aria-labelledby="tab-admin" hidden>
-          <form class="cuenta-card cuenta-form" id="admin-ingreso" novalidate>
+        <section class="account-panel" id="panel-admin" role="tabpanel" aria-labelledby="tab-admin" hidden>
+          <form class="account-card account-form" id="admin-form" novalidate>
             <h2>Ingreso de administrador</h2>
             <p>Para revisar y gestionar las reservas del taller.</p>
-            <p class="cuenta-sesion" id="admin-sesion" hidden>Ya tienes una sesión activa. <a href="admin.html">Ir al panel</a></p>
+            <p class="account-session" id="admin-session" hidden>Ya tienes una sesión activa. <a href="admin.html">Ir al panel</a></p>
             <div class="field-block">
-              <label for="admin-usuario">Usuario</label>
-              <input id="admin-usuario" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="80" required>
+              <label for="admin-user">Usuario</label>
+              <input id="admin-user" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="80" required>
             </div>
             <div class="field-block">
-              <label for="admin-clave">Clave</label>
-              <input id="admin-clave" type="password" autocomplete="current-password" maxlength="200" required>
+              <label for="admin-password">Clave</label>
+              <input id="admin-password" type="password" autocomplete="current-password" maxlength="200" required>
             </div>
             <button class="button button-dark" type="submit">Ingresar al panel</button>
-            <p class="cuenta-message" id="admin-mensaje" role="status" aria-live="polite"></p>
+            <p class="account-message" id="admin-message" role="status" aria-live="polite"></p>
           </form>
         </section>
       </div>
@@ -112,7 +112,7 @@
       <div class="footer-legal"><small>© 2026 FORMA, figuras 3D de mascotas hechas a pedido</small></div>
     </div>
   </footer>
-  <script src="js/main.js"></script>
-  <script src="js/account.js"></script>
+  <script type="module" src="js/main.js"></script>
+  <script type="module" src="js/account.js"></script>
 </body>
 </html>
