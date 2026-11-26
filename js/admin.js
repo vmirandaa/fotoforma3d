@@ -232,6 +232,8 @@ function renderOrders(orders, states) {
         ).catch(endSessionOn401);
         order.status = result.status;
         renderOrders(orders, states);
+        // Las tarjetas se vuelven a dibujar: el foco vuelve al selector de esta reserva (si sigue visible con el filtro).
+        ordersBox.querySelector('select[aria-label="Estado de la reserva ' + order.code + '"]')?.focus();
         setMessage(
           boardMessage,
           'Reserva ' +
@@ -248,11 +250,20 @@ function renderOrders(orders, states) {
     });
     const view = el(
       'button',
-      { type: 'button', disabled: !order.hasModel },
+      // El nombre accesible lleva el código: con lector de pantalla, cada tarjeta repetía "Ver en 3D" sin decir de cuál.
+      {
+        type: 'button',
+        disabled: !order.hasModel,
+        'aria-label': (order.hasModel ? 'Ver en 3D la reserva ' : 'Sin copia del modelo de la reserva ') + order.code
+      },
       order.hasModel ? 'Ver en 3D' : 'Sin copia del modelo'
     );
     view.addEventListener('click', () => openModel(order));
-    const download = el('button', { type: 'button', hidden: !order.hasModel }, 'Descargar modelo');
+    const download = el(
+      'button',
+      { type: 'button', hidden: !order.hasModel, 'aria-label': 'Descargar el modelo de la reserva ' + order.code },
+      'Descargar modelo'
+    );
     download.addEventListener('click', async () => {
       download.disabled = true;
       try {

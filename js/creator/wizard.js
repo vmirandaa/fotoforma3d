@@ -24,7 +24,8 @@ const WIZARD_STEPS = [
   }
 ];
 const wizardQuery = window.matchMedia('(max-width: 700px)');
-const wizardHead = el('div', { className: 'wizard-head' });
+// tabIndex -1: recibe el foco al cambiar de paso (ver renderWizard), pero no es una parada de Tab.
+const wizardHead = el('div', { className: 'wizard-head', tabIndex: -1 });
 const wizardBack = el('button', { type: 'button', className: 'wizard-back' }, 'Atrás');
 const wizardNext = el('button', { type: 'button', className: 'button button-dark wizard-next' });
 const wizardHint = el('p', { className: 'wizard-hint', role: 'status' });
@@ -79,7 +80,12 @@ function renderWizard(scroll) {
   wizardHint.textContent = '';
   // Un aviso de éxito del paso anterior ("Foto lista.") ya no aporta al cambiar de paso.
   if (scroll && stateIsSuccess()) showState('');
-  if (scroll) form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  if (scroll) {
+    form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // Sin esto el foco queda en "Siguiente", que va después de los campos del paso nuevo (o se oculta en el último):
+    // con teclado se saltaba el paso entero, y el lector de pantalla no anunciaba el cambio.
+    wizardHead.focus({ preventScroll: true });
+  }
 }
 
 wizardNext.addEventListener('click', () => {

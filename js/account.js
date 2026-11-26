@@ -119,6 +119,8 @@ function renderTracking(order) {
   trackForm.hidden = true;
   trackResult.hidden = false;
   trackResult.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  // El formulario se ocultó con el foco adentro: se lleva al título del resultado, que el lector de pantalla anuncia.
+  document.querySelector('#tracking-title').focus({ preventScroll: true });
 }
 trackForm.addEventListener('submit', async (event) => {
   event.preventDefault();
@@ -195,6 +197,9 @@ trackViewButton.addEventListener('click', async () => {
     trackViewerBox.replaceChildren(viewer);
     trackViewerBox.hidden = false;
     trackViewButton.hidden = true;
+    // El botón se ocultó con el foco: pasa al recuadro del visor (model-viewer no recibe foco en su elemento,
+    // solo en su parte interna); desde ahí, Tab entra al visor, que se gira con las flechas.
+    trackViewerBox.focus({ preventScroll: true });
   } catch (error) {
     trackViewButton.disabled = false;
     trackViewButton.textContent = 'Ver su figura en 3D';

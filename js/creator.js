@@ -198,7 +198,9 @@ async function runGeneration() {
     showState('Listo. Revisa la figura y, si te gusta, elige el tamaño.', 'success');
     setOrderStatus('Revisa el tamaño y completa tus datos para reservar.');
     generateButton.textContent = 'Probar con otras fotos';
-    setActiveTab('view');
+    // Con foco: el botón de generar quedó deshabilitado mientras se esperaba y el foco cayó al inicio de la página;
+    // así el teclado y el lector de pantalla siguen en la pestaña nueva.
+    setActiveTab('view', true);
   } catch (error) {
     setModelState(state.hasGeneratedModel ? 'Vista previa anterior' : 'Sin figura todavía', state.hasGeneratedModel);
     stopWaiting(false);

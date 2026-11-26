@@ -84,6 +84,8 @@
   align-items: baseline;
   gap: var(--space-xs) var(--space-lg);
   h2 { font-size: var(--text-2xl); font-variant-numeric: tabular-nums; }
+  // Recibe el foco al mostrar el resultado solo para anunciarlo; no es un control, así que no lleva contorno.
+  h2:focus { outline: none; }
   p { font-size: var(--text-sm); color: var(--color-muted); }
 }
 .tracking-cancelled {

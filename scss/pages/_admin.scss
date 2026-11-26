@@ -227,5 +227,7 @@
   .admin-heading { align-items: center; }
   .order-card { grid-template-columns: minmax(0, 1fr); }
   .admin-search { max-width: none; }
+  // 16 px en celular, como el resto de los campos (design.md): con menos, Safari en iPhone acerca la página al tocarlos.
+  .admin-search input, .order-card select { font-size: 16px; }
   .model-dialog { padding: var(--space-md); }
 }

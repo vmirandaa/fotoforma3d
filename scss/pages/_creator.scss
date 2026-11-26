@@ -304,6 +304,9 @@
 .model-stage {
   position: relative;
   height: min(64vh, 620px);
+  // En iPhone, vh mide la pantalla sin las barras de Safari y el visor quedaba más alto que lo visible; dvh sigue
+  // el alto real. La línea de arriba queda para navegadores sin dvh.
+  height: min(64dvh, 620px);
   min-height: 380px;
   border-radius: var(--radius-card);
   background: var(--color-stage);
@@ -425,6 +428,8 @@
 .studio-form.wizard[data-wizard-current="3"] [data-wizard-step]:not([data-wizard-step="3"]) { display: none !important; }
 .studio-form.wizard .studio-form-heading { display: none; }
 .studio-form.wizard .wizard-head {
+  // Recibe el foco al cambiar de paso solo para anunciarlo; no es un control, así que no lleva contorno.
+  &:focus { outline: none; }
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;

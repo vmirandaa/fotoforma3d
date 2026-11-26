@@ -275,6 +275,12 @@
   strong { font-size: var(--text-sm); font-weight: 600; color: var(--color-ink); }
 }
 .compare-item.featured .compare-label strong { color: var(--color-accent); }
+// Contraste (≥ 4,5:1): sobre el verde claro del escenario, en modo claro, el acento daba 2,6:1 y --color-ink-2 4,3:1.
+// Se usan los tonos más oscuros de la misma familia; en modo oscuro el escenario es oscuro y no hace falta.
+:root:not([data-mode="dark"]) .size-compare {
+  --color-muted: var(--color-ink);
+  .compare-item.featured .compare-label strong { color: var(--color-field); }
+}
 .compare-picker, .size-compare .phone-only { display: none; }
 
 // --- Preguntas frecuentes: el título a la izquierda, las preguntas en filas ---

@@ -33,7 +33,7 @@ export function setOrderStatus(message, kind) {
   orderStatus.textContent = message || '';
   orderStatus.className = 'order-status' + (kind ? ' ' + kind : '');
 }
-export function selectedSize() {
+function selectedSize() {
   const checked = sizeOptions.querySelector('input:checked');
   return checked ? checked.value : '';
 }
@@ -275,15 +275,20 @@ orderForm.addEventListener('submit', async (event) => {
       'Reserva ' + result.code + ' recibida. Te escribiremos a ' + email + ' para confirmar el pago y el envío.',
       'success'
     );
-    orderStatus.append(
-      ' ',
-      el('a', { href: 'ingresar.html?codigo=' + encodeURIComponent(result.code) }, 'Sigue tu pedido aquí'),
-      '.'
+    const trackLink = el(
+      'a',
+      { href: 'ingresar.html?codigo=' + encodeURIComponent(result.code) },
+      'Sigue tu pedido aquí'
     );
+    orderStatus.append(' ', trackLink, '.');
+    // El botón quedó deshabilitado y el foco se perdía al inicio de la página: se lleva al enlace del seguimiento.
+    trackLink.focus();
   } catch (error) {
     setOrderStatus(error.message || 'No se pudo registrar la reserva.', 'error');
   } finally {
     orderBusy = false;
     notifyChange();
+    // Tras un error el botón vuelve a habilitarse: el foco regresa a él para poder reintentar con teclado.
+    if (!orderSent && document.activeElement === document.body) orderSubmit.focus();
   }
 });

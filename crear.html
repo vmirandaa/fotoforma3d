@@ -127,7 +127,7 @@
                 <p class="generate-hint" id="generate-hint"></p>
                 <div class="generation-state" id="generation-state" role="status" aria-live="polite"></div>
                 <div class="generation-progress" id="generation-progress" hidden>
-                  <div class="wait-head"><strong id="progress-text">Enviando las fotos…</strong><span class="wait-time" id="progress-time" aria-label="Tiempo transcurrido">0:00</span></div>
+                  <div class="wait-head"><strong id="progress-text" role="status">Enviando las fotos…</strong><span class="wait-time" id="progress-time" aria-label="Tiempo transcurrido">0:00</span></div>
                   <div class="progress-track"><span id="progress-fill"></span></div>
                   <ol class="wait-steps" id="wait-steps">
                     <li data-step="send"><i aria-hidden="true"></i>Enviando las fotos</li>
@@ -171,7 +171,7 @@
                   <p class="finish-note" id="finish-note" hidden>La pintamos a mano, tomando como guía los colores de sus fotos. Puede tardar algunos días más; te confirmamos el plazo al escribirte.</p>
                 </fieldset>
                 <div class="extras-options" id="extras-options"></div>
-                <p class="order-total" id="order-total" hidden></p>
+                <p class="order-total" id="order-total" aria-live="polite" hidden></p>
                 <div class="field-block">
                   <label for="order-name">Tu nombre</label>
                   <input id="order-name" type="text" maxlength="80" autocomplete="name" required>

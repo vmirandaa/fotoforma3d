@@ -31,7 +31,8 @@ No pongas la clave dentro de los archivos HTML o JavaScript del navegador ni la 
   - `previews.mjs` (fotos → servicio 3D → modelo, con los límites por visitante), `orders.mjs` (reservas y seguimiento), `admin.mjs` (ingreso y panel), `static.mjs` (páginas e imágenes).
   - `order-rules.mjs` (extras y textos de la reserva) y `pass.mjs` (protección contra envíos automáticos): reglas sin disco ni red, con pruebas.
 - `mailer.mjs`: los correos.
-- `test/`: pruebas automáticas de las reglas, el pase y los correos.
+- `test/`: pruebas automáticas de las reglas, el pase, los correos y el recorrido completo (`e2e.test.mjs`).
+- `tools/fake-tripo.mjs`: un Tripo de mentira para probar sin gastar créditos (ver "Probar sin gastar créditos"). No se publica.
 - `providers/`: el servicio de generación 3D (`tripo.mjs`) y sus utilidades (`shared.mjs`).
 - `pedidos/`: las reservas guardadas. No entra a git.
 
@@ -55,6 +56,15 @@ Además, el creador tiene protecciones invisibles contra envíos automáticos:
 Los rechazos quedan anotados en la consola del servidor. Los conteos viven en memoria y se reinician si se reinicia el servidor.
 
 El visitante indica el animal y, si quiere, algún detalle; eso queda en la reserva para el taller. Las fotos se guardan en una carpeta temporal del sistema y se borran a las 24 horas, o al reiniciar el servidor, si nadie reserva. El visor muestra la figura en blanco, como se imprime, o con los colores de la foto.
+
+### Probar sin gastar créditos
+
+`tools/fake-tripo.mjs` imita la API de Tripo en tu computador: recibe las fotos, "genera" en unos segundos y entrega como resultado la figura de muestra de la portada. Así se puede probar el creador completo (vista previa y reserva) sin clave ni créditos.
+
+- `npm run dev:fake`: levanta el simulador y el sitio en [http://127.0.0.1:4174](http://127.0.0.1:4174), con una clave de mentira (`simulada`) que reemplaza a la de `.env`, sin correos y con las reservas en una carpeta temporal del sistema (no en `pedidos/`). Se cierra con Ctrl+C.
+- `node tools/fake-tripo.mjs [puerto]`: solo el simulador (por defecto en el puerto 4399). Para apuntar el sitio a él: `TRIPO_API_KEY=simulada` y `TRIPO_API_BASE=http://127.0.0.1:4399/v3`.
+- `DEMORA_MS` fija cuánto tarda cada vista previa (por defecto, 8 segundos).
+- Con la clave `clave-mala` responde como una clave inválida, y con `sin-creditos`, como una cuenta sin créditos: sirve para ver los mensajes de error que recibe el cliente.
 
 ## Figura de muestra en la portada
 
@@ -97,6 +107,10 @@ El envío usa el paquete `nodemailer`: ejecuta `npm install` una vez antes de `n
 
 `404.html` aparece cuando alguien entra a una dirección que no existe. GitHub Pages la usa sola; el servidor la entrega a los navegadores y responde en JSON a todo lo demás.
 
+## Cabeceras de seguridad
+
+El servidor (`lib/http.mjs`) agrega a todas sus respuestas cabeceras que piden al navegador más cuidado: no adivinar tipos de archivo, no mandar la dirección completa a otros sitios, no dejar que otro sitio muestre FORMA dentro de un marco y no usar cámara, micrófono, ubicación ni pagos. A las páginas les agrega además una política de contenido (`Content-Security-Policy`) que solo deja cargar scripts del propio sitio, de model-viewer (ajax.googleapis.com) y los pequeños scripts escritos dentro de cada página. Estos últimos se autorizan por su huella (hash), que el servidor calcula solo al entregar la página: si cambias uno, no hay que tocar nada más. Si agregas un servicio externo nuevo (otra fuente, un script de estadísticas…), hay que sumarlo en `contentSecurityPolicy`; si no, el navegador lo bloquea y lo avisa en la consola. GitHub Pages no envía estas cabeceras: rigen solo con `npm start` o al publicar el servidor.
+
 ## Estilos (Sass)
 
 Los estilos se escriben en la carpeta `scss/`, separados por tema: los tokens (`_tokens.scss`), la base, los componentes y formularios compartidos, y una parte por página en `scss/pages/` (`_home.scss`, `_creator.scss`, `_account.scss`, `_admin.scss`, `_error.scss`). `scss/main.scss` los une en el orden en que se aplican: cada parte puede ajustar a las anteriores. Con Sass se genera `css/main.css`, la hoja que leen todas las páginas y GitHub Pages.
@@ -115,7 +129,7 @@ Las vistas previas en curso se mantienen en memoria, así que se pierden al rein
 
 Con `npm install` hecho, estos comandos revisan el JavaScript (no cambian nada del sitio):
 
-- `npm test`: corre las pruebas de `test/` (precios y extras, pase contra spam, correos).
+- `npm test`: corre las pruebas de `test/` (precios y extras, pase contra spam, correos). `test/e2e.test.mjs` levanta el servidor de verdad contra el simulador de Tripo y recorre vista previa, reserva, Mi pedido y el panel, con sus casos de error; tarda unos 6 segundos y no usa la clave real ni envía correos.
 - `npm run lint`: ESLint avisa de variables sin uso, nombres mal escritos y errores comunes.
 - `npm run format`: Prettier deja el formato parejo en todos los `.js` y `.mjs` (comillas, sangría, largo de línea).
 - `npm run check`: los tres a la vez, sin modificar archivos. Conviene correrlo antes de cada commit.

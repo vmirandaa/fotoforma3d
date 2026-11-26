@@ -5,3 +5,5 @@ pedidos/
 *.stl
 fotos-prueba/
 !assets/models/sample-figure.glb
+
+.verify/

@@ -60,7 +60,7 @@
 
           <section class="account-card tracking" id="tracking-result" hidden aria-labelledby="tracking-title">
             <div class="tracking-head">
-              <h2 id="tracking-title"></h2>
+              <h2 id="tracking-title" tabindex="-1"></h2>
               <p id="tracking-date"></p>
             </div>
             <p class="tracking-cancelled" id="tracking-cancelled" hidden>Esta reserva fue cancelada. Si crees que es un error, escríbenos.</p>
@@ -69,7 +69,7 @@
             <dl class="tracking-details" id="tracking-details"></dl>
             <div class="tracking-figure" id="tracking-figure" hidden>
               <button class="button button-light" id="tracking-view-figure" type="button">Ver su figura en 3D</button>
-              <div class="tracking-viewer" id="tracking-viewer" hidden></div>
+              <div class="tracking-viewer" id="tracking-viewer" tabindex="-1" hidden></div>
             </div>
             <p class="tracking-help">¿Dudas sobre tu pedido? <a id="tracking-contact" href="mailto:hola@forma3d.cl">Escríbenos</a> con tu código.</p>
             <button class="account-another" id="tracking-another" type="button">Buscar otra reserva</button>

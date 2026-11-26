@@ -1,5 +1,5 @@
 // Llamadas al servidor desde el navegador, con un mensaje que la persona entiende si algo falla en el camino.
-export const CONNECTION_ERROR = 'No pudimos conectar con el sitio. Inténtalo de nuevo.';
+const CONNECTION_ERROR = 'No pudimos conectar con el sitio. Inténtalo de nuevo.';
 
 // La respuesta como JSON. Si llega otra cosa (la página de error del hosting mientras se reinicia, o no hay servidor),
 // lanza CONNECTION_ERROR en vez de "Unexpected token '<'…".

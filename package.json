@@ -8,6 +8,7 @@
   },
   "scripts": {
     "start": "node server.mjs",
+    "dev:fake": "node tools/fake-tripo.mjs --site",
     "build:css": "sass scss/main.scss css/main.css --no-source-map --style=expanded",
     "watch:css": "sass scss/main.scss css/main.css --no-source-map --style=expanded --watch",
     "test": "node --test",
