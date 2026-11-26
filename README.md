@@ -5,8 +5,8 @@ La portada (`index.html`) presenta el servicio: una figura 3D de tu mascota hech
 ## Ponerlo en marcha
 
 1. Instala Node.js 20.6 o posterior.
-2. Crea una clave API en el servicio 3D que vas a usar: Tripo, en [developers.tripo3d.ai](https://developers.tripo3d.ai), o Hyper3D si usas Rodin.
-3. Copia `.env.example` como `.env`, deja `PROVIDER=tripo` (o `rodin`) y pega tu clave en `TRIPO_API_KEY` (o `RODIN_API_KEY`).
+2. Crea una clave API en el servicio 3D que vas a usar, Tripo, en [developers.tripo3d.ai](https://developers.tripo3d.ai).
+3. Copia `.env.example` como `.env` y pega tu clave en `TRIPO_API_KEY`.
 4. Abre PowerShell en esta carpeta y ejecuta `npm start`.
 5. Abre [http://127.0.0.1:4173](http://127.0.0.1:4173).
 
@@ -29,20 +29,16 @@ No pongas la clave dentro de los archivos HTML o JavaScript del navegador ni la 
 - `lib/`: el servidor por tema.
   - `config.mjs` (lee `.env`; carpetas, puerto y servicio 3D), `http.mjs` (responder y leer solicitudes).
   - `previews.mjs` (fotos → servicio 3D → modelo, con los límites por visitante), `orders.mjs` (reservas y seguimiento), `admin.mjs` (ingreso y panel), `static.mjs` (páginas e imágenes).
-  - `order-rules.mjs` (extras y el texto para el servicio 3D) y `pass.mjs` (protección contra envíos automáticos): reglas sin disco ni red, con pruebas.
+  - `order-rules.mjs` (extras y textos de la reserva) y `pass.mjs` (protección contra envíos automáticos): reglas sin disco ni red, con pruebas.
 - `mailer.mjs`: los correos.
 - `test/`: pruebas automáticas de las reglas, el pase y los correos.
-- `providers/`: los servicios de generación 3D, uno por archivo (`tripo.mjs`, `rodin.mjs`); `index.mjs` elige cuál usar.
+- `providers/`: el servicio de generación 3D (`tripo.mjs`) y sus utilidades (`shared.mjs`).
 - `pedidos/`: las reservas guardadas. No entra a git.
 
 ## Vista previa
 
-La vista previa la genera un servicio externo con cobro por créditos. Como es gratis para el visitante, cada una la pagas tú. `PROVIDER` en `.env` elige el servicio:
-
-- **Tripo** (`PROVIDER=tripo`, por defecto). Cuesta 30 créditos (US$0,30) por vista previa con colores, o 20 sin colores (`TRIPO_TEXTURE=false`). Si el cliente sube foto de frente y al menos otra de costado o espalda (con la subida por ángulos; en "Foto suelta" va una sola foto, que cuenta como frente), usa la multivista de Tripo; si no, genera desde una sola foto. Tripo no acepta texto junto a las fotos: las indicaciones de cola, orejas o detalles no llegan al modelo, pero quedan en la reserva para el taller. `TRIPO_MODEL` permite fijar otra versión del modelo.
-- **Rodin / Hyper3D** (`PROVIDER=rodin`). Acepta texto junto a las fotos (lo arma `buildPetPrompt` en `server.mjs`). `PREVIEW_TIER` define el nivel de detalle (`Gen-2.5-Low`, `Gen-2.5-Medium` o `Gen-2.5-High`).
-
-Cada servicio está en su archivo de `providers/` con el mismo contrato (empezar una tarea y consultar su estado). Para sumar otro, como Hunyuan, se crea su archivo y se agrega a la lista de `providers/index.mjs`; el resto del sitio no cambia. Cuando una vista previa está lista, el servidor descarga el modelo y lo guarda junto a las fotos, así no depende de cuánto dure el enlace del servicio. Si el servicio falla (por ejemplo, sin créditos o con la clave equivocada), el cliente ve un mensaje simple y el motivo exacto queda en la consola del servidor.
+La vista previa la genera un servicio externo con cobro por créditos. Como es gratis para el visitante, cada una la pagas tú. El servicio es **Tripo**. Cuesta 30 créditos (US$0,30) por vista previa con colores, o 20 sin colores (`TRIPO_TEXTURE=false`). Si el cliente sube foto de frente y al menos otra de costado o espalda (con la subida por ángulos; en "Foto suelta" va una sola foto, que cuenta como frente), usa la multivista de Tripo; si no, genera desde una sola foto. Tripo no acepta texto junto a las fotos: las indicaciones de cola, orejas o detalles no llegan al modelo, pero quedan en la reserva para el taller. `TRIPO_MODEL` permite fijar otra versión del modelo.
+Cuando una vista previa está lista, el servidor descarga el modelo y lo guarda junto a las fotos, así no depende de cuánto dure el enlace del servicio. Si el servicio falla (por ejemplo, sin créditos o con la clave equivocada), el cliente ve un mensaje simple y el motivo exacto queda en la consola del servidor.
 
 Límites de gasto y protección contra spam:
 
@@ -58,7 +54,7 @@ Además, el creador tiene protecciones invisibles contra envíos automáticos:
 
 Los rechazos quedan anotados en la consola del servidor. Los conteos viven en memoria y se reinician si se reinicia el servidor.
 
-El servidor arma el prompt para mascotas en `buildPetPrompt` (`server.mjs`); el visitante solo indica el animal y, si quiere, algún detalle. Las fotos se guardan en una carpeta temporal del sistema y se borran a las 24 horas, o al reiniciar el servidor, si nadie reserva. El visor muestra la figura en blanco, como se imprime, o con los colores de la foto.
+El visitante indica el animal y, si quiere, algún detalle; eso queda en la reserva para el taller. Las fotos se guardan en una carpeta temporal del sistema y se borran a las 24 horas, o al reiniciar el servidor, si nadie reserva. El visor muestra la figura en blanco, como se imprime, o con los colores de la foto.
 
 ## Figura de muestra en la portada
 

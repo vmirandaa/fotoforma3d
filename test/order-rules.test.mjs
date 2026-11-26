@@ -1,8 +1,8 @@
-// Pruebas de las reglas de la reserva y del texto que se envía al servicio 3D. Se corren con: npm test
+// Pruebas de las reglas de la reserva. Se corren con: npm test
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { cleanText, buildPetPrompt, tailSummary, readOrderExtras } from '../lib/order-rules.mjs';
+import { cleanText, tailSummary, readOrderExtras } from '../lib/order-rules.mjs';
 
 // Se usa el catálogo real del sitio: si alguien cambia precios u opciones, las pruebas lo leen tal cual.
 const catalog = JSON.parse(readFileSync(new URL('../data/catalog.json', import.meta.url), 'utf8'));
@@ -61,27 +61,6 @@ test('la cantidad debe ser un entero entre 1 y el máximo del catálogo', () => 
   for (const quantity of [0, -1, max + 1, 1.5, 'dos']) {
     assert.ok(readOrderExtras(catalog, { quantity }).error, 'debería rechazar ' + quantity);
   }
-});
-
-test('el texto para el servicio 3D nombra al animal y las notas del dueño', () => {
-  assert.match(buildPetPrompt('perro', '', '', ''), /^A single dog, full body/);
-  assert.match(buildPetPrompt('gato', '', '', ''), /^A single cat,/);
-  assert.match(buildPetPrompt('desconocido', '', '', ''), /^A single pet animal,/);
-  assert.match(buildPetPrompt('perro', 'mancha blanca en el pecho', '', ''), /Owner notes: mancha blanca en el pecho$/);
-});
-
-test('el texto para el servicio 3D explica la cola cuando no se ve o no existe', () => {
-  assert.match(
-    buildPetPrompt('perro', '', 'not-visible', 'larga y peluda'),
-    /Owner description of the tail: larga y peluda/
-  );
-  assert.match(buildPetPrompt('perro', '', 'not-visible', ''), /give it a natural tail/);
-  assert.match(buildPetPrompt('perro', '', 'no-tail', ''), /has no tail/);
-  assert.doesNotMatch(buildPetPrompt('perro', '', 'visible', ''), /tail is not visible|has no tail/);
-});
-
-test('el texto para el servicio 3D no pasa de 900 caracteres', () => {
-  assert.ok(buildPetPrompt('perro', 'x'.repeat(2000), 'not-visible', 'y'.repeat(500)).length <= 900);
 });
 
 test('el resumen de la cola para el panel', () => {

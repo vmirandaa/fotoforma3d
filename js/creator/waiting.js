@@ -1,6 +1,6 @@
 // Pantalla de espera mientras se genera la vista previa: etapas, tiempo transcurrido, avance y consejos.
 import { wait } from './shared.js';
-import { api, readJson } from '../api.js';
+import { requestJson } from '../api.js';
 
 const progressBox = document.querySelector('#generation-progress');
 const progressFill = document.querySelector('#progress-fill');
@@ -96,9 +96,7 @@ export async function pollTask(id) {
   let delay = 4000;
   while (Date.now() < deadline) {
     await wait(delay);
-    const response = await api('/api/status/' + encodeURIComponent(id));
-    const result = await readJson(response);
-    if (!response.ok) throw new Error(result.error || 'No se pudo consultar el avance.');
+    const result = await requestJson('/api/status/' + encodeURIComponent(id), {}, 'No se pudo consultar el avance.');
     if (result.status === 'failed') throw new Error(result.error || 'No pudimos crear la figura con esta foto.');
     if (result.status === 'done') return result;
     if (Number(result.progress) > 0) waitState.realProgress = Number(result.progress);

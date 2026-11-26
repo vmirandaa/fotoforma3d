@@ -1,5 +1,5 @@
 import { formatPrice, SPECIES_LABELS } from './rules.js';
-import { api, readJson } from './api.js';
+import { request, requestJson } from './api.js';
 import { viewerMaterials, paintMaterials } from './viewer.js';
 import { el } from './dom.js';
 
@@ -61,16 +61,10 @@ function setMessage(box, text, isError) {
   box.textContent = text || '';
   box.className = 'admin-message' + (isError ? ' error' : '');
 }
-async function adminFetch(url, options = {}) {
-  const response = await api(url, {
-    ...options,
-    credentials: 'same-origin'
-  });
-  if (response.status === 401) {
-    clearBoard();
-    throw new Error('Tu sesión de administrador no está activa. Ingresa de nuevo.');
-  }
-  return response;
+// Se agrega a cada llamada del panel: si la sesión venció (401), se limpia lo cargado. El mensaje lo manda el servidor.
+function endSessionOn401(error) {
+  if (error.status === 401) clearBoard();
+  throw error;
 }
 function showBoard(visible) {
   board.hidden = !visible;
@@ -227,13 +221,15 @@ function renderOrders(orders, states) {
     select.addEventListener('change', async () => {
       select.disabled = true;
       try {
-        const response = await adminFetch('/api/admin/orders/' + order.code + '/status', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ status: select.value })
-        });
-        const result = await readJson(response);
-        if (!response.ok) throw new Error(result.error || 'No se pudo guardar el estado.');
+        const result = await requestJson(
+          '/api/admin/orders/' + order.code + '/status',
+          {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ status: select.value })
+          },
+          'No se pudo guardar el estado.'
+        ).catch(endSessionOn401);
         order.status = result.status;
         renderOrders(orders, states);
         setMessage(
@@ -292,10 +288,9 @@ async function photoUrl(photo) {
   if (!photoUrls.has(photo.file)) {
     photoUrls.set(
       photo.file,
-      adminFetch('/api/admin/photo/' + photo.file).then(async (response) => {
-        if (!response.ok) throw new Error('No se pudo cargar la foto.');
-        return URL.createObjectURL(await response.blob());
-      })
+      request('/api/admin/photo/' + photo.file, {}, 'No se pudo cargar la foto.')
+        .catch(endSessionOn401)
+        .then(async (response) => URL.createObjectURL(await response.blob()))
     );
   }
   return photoUrls.get(photo.file);
@@ -373,8 +368,9 @@ photoDialog.addEventListener('click', (event) => {
 // --- Modelos: se piden con la clave del panel y quedan en memoria mientras la sesión siga abierta ---
 async function fetchModel(code) {
   if (modelBlobs.has(code)) return modelBlobs.get(code);
-  const response = await adminFetch('/api/admin/model/' + code);
-  if (!response.ok) throw new Error((await readJson(response)).error || 'No se pudo obtener el modelo.');
+  const response = await request('/api/admin/model/' + code, {}, 'No se pudo obtener el modelo.').catch(
+    endSessionOn401
+  );
   const blob = await response.blob();
   modelBlobs.set(code, blob);
   return blob;
@@ -455,9 +451,9 @@ viewDownload.addEventListener('click', () => {
 
 async function loadOrders() {
   setMessage(boardMessage, 'Cargando reservas…');
-  const response = await adminFetch('/api/admin/orders');
-  const result = await readJson(response);
-  if (!response.ok) throw new Error(result.error || 'No se pudieron cargar las reservas.');
+  const result = await requestJson('/api/admin/orders', {}, 'No se pudieron cargar las reservas.').catch(
+    endSessionOn401
+  );
   showBoard(true);
   renderOrders(result.orders, result.states);
   setMessage(boardMessage, '');
@@ -473,7 +469,7 @@ async function enter() {
 }
 async function logout() {
   try {
-    await fetch('/api/admin/logout', { method: 'POST', credentials: 'same-origin' });
+    await fetch('/api/admin/logout', { method: 'POST' });
   } catch {}
   clearBoard();
   window.location.href = 'ingresar.html#admin';

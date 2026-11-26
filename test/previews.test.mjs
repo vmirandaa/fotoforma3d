@@ -4,7 +4,6 @@ import assert from 'node:assert/strict';
 import { Readable } from 'node:stream';
 
 // Un servicio 3D "configurado" que apunta a una dirección donde no hay nada: nunca gasta créditos reales.
-process.env.PROVIDER = 'tripo';
 process.env.TRIPO_API_KEY = 'prueba';
 process.env.TRIPO_API_BASE = 'http://127.0.0.1:9';
 process.env.PREVIEW_DAILY_BUDGET = '1';

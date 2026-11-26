@@ -2,7 +2,7 @@
 // También el acabado del visor, porque elegir "pintada" muestra la vista previa con sus colores.
 import { el } from '../dom.js';
 import { catalogPromise } from '../catalog.js';
-import { api, readJson } from '../api.js';
+import { requestJson } from '../api.js';
 import { paintMaterials } from '../viewer.js';
 import { BASE_NAME_MAX, maxQuantity, canPaint, unitPrice, formatPrice } from '../rules.js';
 import { state, notifyChange } from './shared.js';
@@ -248,25 +248,27 @@ orderForm.addEventListener('submit', async (event) => {
   notifyChange();
   setOrderStatus('Enviando tu reserva…');
   try {
-    const response = await api('/api/order', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        taskId: state.taskId,
-        size: selectedSize(),
-        finish: selectedFinish(),
-        name,
-        email,
-        notes: orderNotes.value.trim(),
-        format: extras.formato.id,
-        style: extras.estilo.id,
-        base: extras.base.id,
-        baseName: extras.baseName,
-        quantity: extras.quantity
-      })
-    });
-    const result = await readJson(response);
-    if (!response.ok) throw new Error(result.error || 'No se pudo registrar la reserva.');
+    const result = await requestJson(
+      '/api/order',
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          taskId: state.taskId,
+          size: selectedSize(),
+          finish: selectedFinish(),
+          name,
+          email,
+          notes: orderNotes.value.trim(),
+          format: extras.formato.id,
+          style: extras.estilo.id,
+          base: extras.base.id,
+          baseName: extras.baseName,
+          quantity: extras.quantity
+        })
+      },
+      'No se pudo registrar la reserva.'
+    );
     orderSent = true;
     orderSubmit.textContent = 'Reserva enviada';
     setOrderStatus(

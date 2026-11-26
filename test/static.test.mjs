@@ -6,9 +6,9 @@ import path from 'node:path';
 import { PassThrough } from 'node:stream';
 import { fileURLToPath } from 'node:url';
 
-// Una carpeta de reservas dentro del proyecto, como si ORDERS_DIR apuntara ahí. Se borra al terminar.
+// Una carpeta de reservas dentro de una carpeta pública (data/), como si ORDERS_DIR apuntara ahí. Se borra al terminar.
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const ordersDir = fs.mkdtempSync(path.join(root, 'reservas-prueba-'));
+const ordersDir = fs.mkdtempSync(path.join(root, 'data', 'Reservas-'));
 fs.writeFileSync(path.join(ordersDir, 'pedidos.jsonl'), '{"code":"F-00000000"}\n');
 after(() => fs.rmSync(ordersDir, { recursive: true, force: true }));
 process.env.ORDERS_DIR = ordersDir;
@@ -31,7 +31,13 @@ test('entrega las páginas y los archivos del sitio', async () => {
 });
 
 test('nunca entrega las reservas, la configuración ni el código del servidor', async () => {
-  assert.equal(await status('/' + path.basename(ordersDir) + '/pedidos.jsonl'), 404);
+  const orders = '/data/' + path.basename(ordersDir) + '/pedidos.jsonl';
+  assert.equal(await status(orders), 404);
+  // En Windows y macOS la misma carpeta se abre con otras mayúsculas.
+  assert.equal(await status(orders.toLowerCase()), 404);
+  assert.equal(await status('/README.md'), 404);
+  assert.equal(await status('/lib/config.mjs'), 404);
+  assert.equal(await status('/scss/main.scss'), 404);
   assert.equal(await status('/.env'), 404);
   assert.equal(await status('/server.mjs'), 404);
   assert.equal(await status('/server.mjs::$DATA'), 404);

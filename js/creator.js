@@ -5,7 +5,7 @@
 //   waiting.js  pantalla de espera mientras se genera
 //   order.js   tamaño, extras, total y reserva
 import { viewerMaterials } from './viewer.js';
-import { api, readJson } from './api.js';
+import { requestJson } from './api.js';
 import { form, selectedFiles, state, onChange, showState, tailChoice, tailReady, wait } from './creator/shared.js';
 import { photosToSend } from './creator/photos.js';
 import './creator/wizard.js';
@@ -93,8 +93,7 @@ tailNotesInput.addEventListener('input', syncButtons);
 
 async function checkServer() {
   try {
-    const response = await fetch('/api/health');
-    const result = await readJson(response);
+    const result = await requestJson('/api/health');
     state.serviceReady = Boolean(result.ready);
     if (!state.serviceReady)
       showState('La vista previa no está disponible en este momento. Vuelve a intentarlo más tarde.');
@@ -111,8 +110,7 @@ checkServer();
 let previewPass = '';
 async function refreshPass() {
   try {
-    const response = await fetch('/api/pass', { cache: 'no-store' });
-    const result = await readJson(response);
+    const result = await requestJson('/api/pass', { cache: 'no-store' });
     previewPass = result.pass || '';
   } catch {
     previewPass = '';
@@ -120,7 +118,11 @@ async function refreshPass() {
 }
 refreshPass();
 function startGeneration(payload) {
-  return api('/api/generate', { method: 'POST', body: payload, headers: { 'x-forma-pass': previewPass } });
+  return requestJson(
+    '/api/generate',
+    { method: 'POST', body: payload, headers: { 'x-forma-pass': previewPass } },
+    'No se pudo iniciar la vista previa.'
+  );
 }
 
 // --- Generación de la vista previa ---
@@ -168,18 +170,19 @@ async function runGeneration() {
     payload.append('tailNotes', tailChoice() === 'not-visible' ? tailNotesInput.value.trim() : '');
     payload.append('website', document.querySelector('#website').value);
     if (!previewPass) await refreshPass();
-    let response = await startGeneration(payload);
-    let started = await readJson(response);
-    // Si el pase venció (por ejemplo, el servidor se reinició), se pide uno nuevo y se reintenta una vez.
-    if (response.status === 403 && started.code === 'pass') {
-      await refreshPass();
-      await wait(4500);
-      response = await startGeneration(payload);
-      started = await readJson(response);
+    let started;
+    try {
+      started = await startGeneration(payload).catch(async (error) => {
+        // Si el pase venció (por ejemplo, el servidor se reinició), se pide uno nuevo y se reintenta una vez.
+        if (error.status !== 403 || error.code !== 'pass') throw error;
+        await refreshPass();
+        await wait(4500);
+        return startGeneration(payload);
+      });
+    } finally {
+      // Cada pase sirve una vez: se pide otro para la siguiente vista previa.
+      refreshPass();
     }
-    // Cada pase sirve una vez: se pide otro para la siguiente vista previa.
-    refreshPass();
-    if (!response.ok) throw new Error(started.error || 'No se pudo iniciar la vista previa.');
     setModelState('Modelando', false);
     setWaitStep('queue');
     const completed = await pollTask(started.id);
