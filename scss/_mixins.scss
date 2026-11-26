@@ -22,23 +22,3 @@ $phone-max: 700px;
   }
 }
 
-// Reglas solo para pantallas más anchas que un celular.
-@mixin desktop {
-  @media (min-width: $phone-max + 1) {
-    @content;
-  }
-}
-
-// Reglas solo en modo oscuro (js/main.js marca la raíz con data-mode="dark").
-@mixin dark-mode {
-  :root[data-mode="dark"] & {
-    @content;
-  }
-}
-
-// Reglas solo si la persona no pidió reducir el movimiento.
-@mixin with-motion {
-  @media (prefers-reduced-motion: no-preference) {
-    @content;
-  }
-}

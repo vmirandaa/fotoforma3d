@@ -1,6 +1,6 @@
-// Fotos de la mascota: subida libre (hasta cinco) o por ángulos (un recuadro por ángulo), y su preparación.
+// Fotos de la mascota: una sola en "Foto suelta" o una por recuadro en "Por ángulos", y su preparación.
 import { el } from '../dom.js';
-import { MAX_PHOTOS, MAX_PHOTO_MB, MAX_PHOTO_BYTES, PHOTO_TYPES } from '../rules.js';
+import { MAX_PHOTO_MB, MAX_PHOTO_BYTES, PHOTO_TYPES } from '../rules.js';
 import { selectedFiles, state, showState, notifyChange } from './shared.js';
 
 const imageInput = document.querySelector('#reference-images');
@@ -24,6 +24,8 @@ let uploadMode = 'free';
 const PHOTO_MAX_SIDE = 2048;
 const PHOTO_SEND_BYTES = 4 * 1024 * 1024;
 const PHOTO_MIN_SIDE = 600;
+// Peso máximo de la foto original, antes de achicarla.
+const ORIGINAL_MAX_MB = 25;
 
 // Fotos en el orden en que se envían: por ángulos, en el orden de los recuadros (frente, costados, espalda).
 export function photosToSend() {
@@ -72,69 +74,38 @@ async function preparePhoto(file) {
   const name = file.name.replace(/\.[^.]+$/, '') + '.jpg';
   return { file: new File([blob], name, { type: 'image/jpeg', lastModified: file.lastModified }), small };
 }
-// slotLabel: en el modo por ángulos, la foto va a ese recuadro (Front, Left, Right o Back) y reemplaza la que hubiera.
-async function addFiles(files, slotLabel = '') {
-  const accepted = [];
-  for (const file of Array.from(files || []).slice(0, slotLabel ? 1 : undefined)) {
-    if (!PHOTO_TYPES.includes(file.type)) {
-      showState('Solo se aceptan fotos JPG, PNG o WEBP.');
-      continue;
-    }
-    if (file.size > MAX_PHOTO_BYTES) {
-      showState('Cada foto debe pesar ' + MAX_PHOTO_MB + ' MB o menos.');
-      continue;
-    }
-    const key = file.name + ':' + file.size;
-    if (
-      selectedFiles.some((entry) => entry.sourceKey === key && entry.label !== slotLabel) ||
-      accepted.some((item) => item.key === key)
-    ) {
-      if (slotLabel) showState('Esa foto ya está en otro ángulo.');
-      continue;
-    }
-    if (!slotLabel && selectedFiles.length + state.preparingPhotos + accepted.length >= MAX_PHOTOS) {
-      showState('Puedes subir hasta cinco fotos de la misma mascota.');
-      break;
-    }
-    accepted.push({ file, key });
-  }
-  if (!accepted.length) {
-    notifyChange();
-    return;
-  }
-  state.preparingPhotos += accepted.length;
-  showState(accepted.length === 1 ? 'Preparando la foto…' : 'Preparando ' + accepted.length + ' fotos…');
+// La foto va al recuadro `label` (Front, Left, Right o Back) y reemplaza la que hubiera.
+// En "Foto suelta" siempre es Front: una foto nueva reemplaza a la anterior.
+async function addPhoto(file, label) {
+  if (!file) return;
+  if (!PHOTO_TYPES.includes(file.type)) return showState('Solo se aceptan fotos JPG, PNG o WEBP.');
+  if (file.size > ORIGINAL_MAX_MB * 1024 * 1024)
+    return showState('Cada foto debe pesar ' + ORIGINAL_MAX_MB + ' MB o menos.');
+  const key = file.name + ':' + file.size;
+  if (selectedFiles.some((entry) => entry.sourceKey === key && entry.label !== label))
+    return showState('Esa foto ya está en otro ángulo.');
+  state.preparingPhotos += 1;
+  showState('Preparando la foto…');
   notifyChange();
-  const smallPhotos = [];
-  for (const item of accepted) {
-    const prepared = await preparePhoto(item.file);
-    state.preparingPhotos -= 1;
-    if (slotLabel) {
-      const previous = selectedFiles.findIndex((entry) => entry.label === slotLabel);
-      if (previous >= 0) selectedFiles.splice(previous, 1);
-      selectedFiles.push({ file: prepared.file, sourceKey: item.key, label: slotLabel });
-    } else {
-      selectedFiles.push({
-        file: prepared.file,
-        sourceKey: item.key,
-        label: selectedFiles.length === 0 ? 'Front' : '?'
-      });
-    }
-    if (prepared.small) smallPhotos.push(item.file.name);
-    renderFiles();
+  const prepared = await preparePhoto(file);
+  state.preparingPhotos -= 1;
+  // El servidor no acepta fotos más pesadas; pasa si el navegador no pudo achicarla.
+  if (prepared.file.size > MAX_PHOTO_BYTES) {
     notifyChange();
+    return showState('No pudimos achicar esa foto a menos de ' + MAX_PHOTO_MB + ' MB. Prueba con otra.');
   }
+  const previous = selectedFiles.findIndex((entry) => entry.label === label);
+  if (previous >= 0) {
+    if (selectedFiles[previous].previewUrl) URL.revokeObjectURL(selectedFiles[previous].previewUrl);
+    selectedFiles.splice(previous, 1);
+  }
+  selectedFiles.push({ file: prepared.file, sourceKey: key, label });
+  renderFiles();
+  notifyChange();
   if (state.preparingPhotos) return;
-  if (smallPhotos.length) {
-    showState(
-      (smallPhotos.length === 1 ? 'Una foto es muy pequeña' : smallPhotos.length + ' fotos son muy pequeñas') +
-        ' (menos de ' +
-        PHOTO_MIN_SIDE +
-        ' px): la figura puede salir con menos detalle.'
-    );
-  } else {
-    showState(filesReadyMessage(), 'success');
-  }
+  if (prepared.small)
+    showState('La foto es muy pequeña (menos de ' + PHOTO_MIN_SIDE + ' px): la figura puede salir con menos detalle.');
+  else showState(filesReadyMessage(), 'success');
 }
 // Vista previa de la foto (el enlace temporal se libera al volver a dibujar la lista).
 function thumbnail(entry, alt) {
@@ -149,22 +120,16 @@ function renderFiles() {
     renderAngleSlots();
     return;
   }
+  // "Foto suelta": una sola foto.
   fileList.replaceChildren();
-  fileList.classList.toggle('single', selectedFiles.length < 2);
   moreAngles.hidden = selectedFiles.length === 0;
   moreAngles.classList.toggle('nudge', selectedFiles.length === 1);
-  if (selectedFiles.length === 1)
-    moreAngles.textContent =
-      'Con una sola foto, el modelo inventa lo que no se ve. Si puedes, suma una de costado o donde se vea la cola.';
-  else if (selectedFiles.length >= MAX_PHOTOS) moreAngles.textContent = 'Llegaste al máximo de cinco fotos.';
-  else
-    moreAngles.textContent = 'Para indicar desde dónde es cada foto, usa "Por ángulos": ayuda a armar bien el volumen.';
-  selectedFiles.forEach((entry, index) => {
-    const remove = el('button', { type: 'button', 'aria-label': 'Quitar foto ' + (index + 1) }, '×');
+  moreAngles.textContent =
+    'Con una sola foto, el modelo inventa lo que no se ve. Si tienes fotos de costado o de espalda, súbelas en "Por ángulos".';
+  selectedFiles.forEach((entry) => {
+    const remove = el('button', { type: 'button', 'aria-label': 'Quitar la foto' }, '×');
     remove.addEventListener('click', () => removeFile(entry));
-    fileList.append(
-      el('div', { className: 'file-thumb' }, thumbnail(entry, 'Foto seleccionada ' + (index + 1)), remove)
-    );
+    fileList.append(el('div', { className: 'file-thumb' }, thumbnail(entry, 'Foto seleccionada'), remove));
   });
 }
 function renderAngleSlots() {
@@ -180,7 +145,7 @@ function renderAngleSlots() {
       'aria-label': (entry ? 'Cambiar' : 'Subir') + ' la foto: ' + slot.name
     });
     input.addEventListener('change', () => {
-      addFiles(Array.from(input.files), slot.label);
+      addPhoto(input.files[0], slot.label);
       input.value = '';
     });
     box.append(input);
@@ -206,7 +171,7 @@ function renderAngleSlots() {
     box.addEventListener('drop', (event) => {
       event.preventDefault();
       box.classList.remove('dragover');
-      addFiles(event.dataTransfer.files, slot.label);
+      addPhoto(event.dataTransfer.files[0], slot.label);
     });
     angleSlots.append(box);
   });
@@ -220,36 +185,21 @@ function renderAngleSlots() {
         ? 'Cada ángulo que sumes ayuda a que la figura salga más parecida, sobre todo la espalda si se ve la cola.'
         : 'Tienes los cuatro ángulos: es la mejor base para la figura.';
 }
-// Al pasar a ángulos, las fotos que ya estaban se reparten en los recuadros (primero las que ya tenían ese ángulo).
+// Al pasar a ángulos, la foto suelta queda en el recuadro del frente.
+// Al volver a "Foto suelta" queda solo una: la del frente, o la primera si no hay de frente.
 function setUploadMode(mode) {
   if (mode === uploadMode || state.preparingPhotos) return;
   uploadMode = mode;
-  if (mode === 'angles') {
-    const slotLabels = ANGLE_SLOTS.map((slot) => slot.label);
-    const placed = new Set();
-    selectedFiles.forEach((entry) => {
-      if (slotLabels.includes(entry.label) && !placed.has(entry.label)) placed.add(entry.label);
-      else entry.label = '';
-    });
-    selectedFiles.forEach((entry) => {
-      if (entry.label) return;
-      const free = slotLabels.find((label) => !placed.has(label));
-      if (free) {
-        entry.label = free;
-        placed.add(free);
-      }
-    });
-    const extra = selectedFiles.filter((entry) => !entry.label);
-    extra.forEach((entry) => {
+  if (mode === 'free' && selectedFiles.length) {
+    const keep = selectedFiles.find((entry) => entry.label === 'Front') || selectedFiles[0];
+    const removed = selectedFiles.filter((entry) => entry !== keep);
+    removed.forEach((entry) => {
       if (entry.previewUrl) URL.revokeObjectURL(entry.previewUrl);
-      selectedFiles.splice(selectedFiles.indexOf(entry), 1);
     });
-    if (extra.length)
-      showState(
-        'Por ángulos caben cuatro fotos: quitamos ' +
-          (extra.length === 1 ? 'una' : extra.length) +
-          '. Revisa que cada una esté en su recuadro.'
-      );
+    if (removed.length)
+      showState('En "Foto suelta" va una sola foto: dejamos ' + (keep.label === 'Front' ? 'la de frente.' : 'una.'));
+    selectedFiles.splice(0, selectedFiles.length, keep);
+    keep.label = 'Front';
   }
   uploadModeBox
     .querySelectorAll('button')
@@ -262,7 +212,7 @@ function setUploadMode(mode) {
 }
 
 imageInput.addEventListener('change', () => {
-  addFiles(Array.from(imageInput.files));
+  addPhoto(imageInput.files[0], 'Front');
   imageInput.value = '';
 });
 uploadZone.addEventListener('dragover', (event) => {
@@ -273,7 +223,7 @@ uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag
 uploadZone.addEventListener('drop', (event) => {
   event.preventDefault();
   uploadZone.classList.remove('dragover');
-  addFiles(event.dataTransfer.files);
+  addPhoto(event.dataTransfer.files[0], 'Front');
 });
 uploadModeBox
   .querySelectorAll('button')

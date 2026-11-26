@@ -39,7 +39,7 @@ No pongas la clave dentro de los archivos HTML o JavaScript del navegador ni la 
 
 La vista previa la genera un servicio externo con cobro por créditos. Como es gratis para el visitante, cada una la pagas tú. `PROVIDER` en `.env` elige el servicio:
 
-- **Tripo** (`PROVIDER=tripo`, por defecto). Cuesta 30 créditos (US$0,30) por vista previa con colores, o 20 sin colores (`TRIPO_TEXTURE=false`). Si el cliente sube foto de frente y al menos otra de costado o espalda (con la subida por ángulos; en "Fotos sueltas" la primera cuenta como frente), usa la multivista de Tripo; si no, genera desde una sola foto. Tripo no acepta texto junto a las fotos: las indicaciones de cola, orejas o detalles no llegan al modelo, pero quedan en la reserva para el taller. `TRIPO_MODEL` permite fijar otra versión del modelo.
+- **Tripo** (`PROVIDER=tripo`, por defecto). Cuesta 30 créditos (US$0,30) por vista previa con colores, o 20 sin colores (`TRIPO_TEXTURE=false`). Si el cliente sube foto de frente y al menos otra de costado o espalda (con la subida por ángulos; en "Foto suelta" va una sola foto, que cuenta como frente), usa la multivista de Tripo; si no, genera desde una sola foto. Tripo no acepta texto junto a las fotos: las indicaciones de cola, orejas o detalles no llegan al modelo, pero quedan en la reserva para el taller. `TRIPO_MODEL` permite fijar otra versión del modelo.
 - **Rodin / Hyper3D** (`PROVIDER=rodin`). Acepta texto junto a las fotos (lo arma `buildPetPrompt` en `server.mjs`). `PREVIEW_TIER` define el nivel de detalle (`Gen-2.5-Low`, `Gen-2.5-Medium` o `Gen-2.5-High`).
 
 Cada servicio está en su archivo de `providers/` con el mismo contrato (empezar una tarea y consultar su estado). Para sumar otro, como Hunyuan, se crea su archivo y se agrega a la lista de `providers/index.mjs`; el resto del sitio no cambia. Cuando una vista previa está lista, el servidor descarga el modelo y lo guarda junto a las fotos, así no depende de cuánto dure el enlace del servicio. Si el servicio falla (por ejemplo, sin créditos o con la clave equivocada), el cliente ve un mensaje simple y el motivo exacto queda en la consola del servidor.
@@ -111,7 +111,7 @@ Los estilos se escriben en la carpeta `scss/`, separados por tema: los tokens (`
 - No edites `css/main.css` a mano: se reemplaza al regenerarlo.
 - Antes de subir a GitHub, regenera `css/main.css` y súbelo junto con los cambios de `scss/`: GitHub Pages publica el `.css`, no compila el `.scss`.
 
-`scss/_mixins.scss` trae atajos para escribir estilos nuevos: `@include phone { … }` (celular), `@include desktop { … }` (computador), `@include dark-mode { … }` (modo oscuro) y `@include with-motion { … }` (si la persona no pidió reducir el movimiento). Para usarlos, agrega `@use 'mixins' as *;` al principio del archivo. Los colores son variables de CSS definidas en `_tokens.scss` (`var(--color-accent)`, `var(--color-paper-2)`…), porque cambian solas en modo oscuro; no escribas colores sueltos fuera de ese archivo.
+`scss/_mixins.scss` trae atajos para escribir estilos nuevos: `@include phone { … }` para reglas solo en celular. Para usarlos, agrega `@use 'mixins' as *;` al principio del archivo. Los colores son variables de CSS definidas en `_tokens.scss` (`var(--color-accent)`, `var(--color-paper-2)`…), porque cambian solas en modo oscuro; no escribas colores sueltos fuera de ese archivo.
 
 Las vistas previas en curso se mantienen en memoria, así que se pierden al reiniciar el servidor; las reservas ya registradas no.
 

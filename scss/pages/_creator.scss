@@ -150,7 +150,7 @@
   .upload-zone .touch-only { display: block; }
 }
 
-// Miniaturas de las fotos sueltas, con su ángulo debajo
+// Miniatura de la foto suelta
 .file-list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));

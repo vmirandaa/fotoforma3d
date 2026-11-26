@@ -1,9 +1,10 @@
 // Reglas que comparten el navegador (creador, Mi pedido) y el servidor. Si cambias una, cambia en los dos lados.
 // El navegador las usa para avisar antes de enviar; el servidor las vuelve a revisar y es quien decide el precio final.
 
-// Fotos de la mascota
-export const MAX_PHOTOS = 5;
-export const MAX_PHOTO_MB = 25;
+// Fotos de la mascota: una en "Foto suelta" o hasta cuatro por ángulos (frente, costados y espalda).
+// El límite de peso es para la foto ya achicada por el navegador, que es la que se envía.
+export const MAX_PHOTOS = 4;
+export const MAX_PHOTO_MB = 10;
 export const MAX_PHOTO_BYTES = MAX_PHOTO_MB * 1024 * 1024;
 export const PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 

@@ -1,6 +1,6 @@
 // Visor 3D (model-viewer): lo comparten la portada, el creador, Mi pedido y el panel.
 export const VIEWER_SCRIPT = 'https://ajax.googleapis.com/ajax/libs/model-viewer/4.4.0/model-viewer.min.js';
-export const PRINT_WHITE = [0.93, 0.92, 0.89, 1]; // blanco del creador y el panel
+const PRINT_WHITE = [0.93, 0.92, 0.89, 1]; // blanco del creador y el panel
 export const SAMPLE_WHITE = [0.88, 0.87, 0.83, 1]; // blanco algo más cálido de la portada y Mi pedido
 // Guarda los colores originales de cada material para poder volver a ellos después de mostrarla en blanco.
 export function viewerMaterials(viewer) {

@@ -63,17 +63,17 @@
             <div class="studio-main">
               <div class="studio-form-heading"><h2>Sube fotos de tu mascota</h2></div>
               <div class="upload-mode" id="upload-mode" role="group" aria-label="Cómo subir las fotos">
-                <button type="button" data-mode="free" aria-pressed="true">Fotos sueltas</button>
+                <button type="button" data-mode="free" aria-pressed="true">Foto suelta</button>
                 <button type="button" data-mode="angles" aria-pressed="false">Por ángulos</button>
               </div>
               <div class="angle-slots" id="angle-slots" hidden></div>
               <label class="upload-zone" id="upload-zone" for="reference-images">
-                <input id="reference-images" type="file" accept="image/png,image/jpeg,image/webp" multiple>
+                <input id="reference-images" type="file" accept="image/png,image/jpeg,image/webp">
                 <svg class="upload-symbol" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M6 10l6-6 6 6M4 20h16"/></svg>
-                <strong class="mouse-only">Arrastra sus fotos aquí</strong><small class="mouse-only">o <u>selecciónalas desde tu dispositivo</u></small><strong class="touch-only">Toca para elegir sus fotos</strong><small class="touch-only">Desde tu galería o con la cámara</small>
-                <span class="upload-limit">JPG, PNG o WEBP. Hasta 5 fotos de 25 MB como máximo cada una.</span>
+                <strong class="mouse-only">Arrastra su foto aquí</strong><small class="mouse-only">o <u>selecciónala desde tu dispositivo</u></small><strong class="touch-only">Toca para elegir su foto</strong><small class="touch-only">Desde tu galería o con la cámara</small>
+                <span class="upload-limit">Una foto JPG, PNG o WEBP, de 25 MB como máximo. Para varias, usa "Por ángulos".</span>
               </label>
-              <div class="file-list single" id="file-list"></div>
+              <div class="file-list" id="file-list"></div>
               <p class="more-angles" id="more-angles" hidden></p>
               <div class="studio-fields">
                 <div class="field-block">
