@@ -1,6 +1,6 @@
-import { formatPrice, catalogPromise } from './catalog.js';
+import { catalogPromise } from './catalog.js';
 import { VIEWER_SCRIPT, SAMPLE_WHITE, viewerMaterials, paintMaterials } from './viewer.js';
-import { canPaint } from './rules.js';
+import { canPaint, formatPrice } from './rules.js';
 import { el } from './dom.js';
 
 const menuButton = document.querySelector('.menu-toggle');

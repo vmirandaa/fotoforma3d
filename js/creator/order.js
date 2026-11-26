@@ -1,9 +1,10 @@
 // Reserva de la figura: tamaño, acabado (en blanco o pintada), extras, cantidad, total y envío del pedido.
 // También el acabado del visor, porque elegir "pintada" muestra la vista previa con sus colores.
 import { el } from '../dom.js';
-import { formatPrice, catalogPromise } from '../catalog.js';
+import { catalogPromise } from '../catalog.js';
+import { api, readJson } from '../api.js';
 import { paintMaterials } from '../viewer.js';
-import { BASE_NAME_MAX, maxQuantity, canPaint, unitPrice } from '../rules.js';
+import { BASE_NAME_MAX, maxQuantity, canPaint, unitPrice, formatPrice } from '../rules.js';
 import { state, notifyChange } from './shared.js';
 
 const finishWhite = document.querySelector('#finish-white');
@@ -247,7 +248,7 @@ orderForm.addEventListener('submit', async (event) => {
   notifyChange();
   setOrderStatus('Enviando tu reserva…');
   try {
-    const response = await fetch('/api/order', {
+    const response = await api('/api/order', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
@@ -264,7 +265,7 @@ orderForm.addEventListener('submit', async (event) => {
         quantity: extras.quantity
       })
     });
-    const result = await response.json();
+    const result = await readJson(response);
     if (!response.ok) throw new Error(result.error || 'No se pudo registrar la reserva.');
     orderSent = true;
     orderSubmit.textContent = 'Reserva enviada';

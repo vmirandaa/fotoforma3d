@@ -5,6 +5,7 @@
 //   waiting.js  pantalla de espera mientras se genera
 //   order.js   tamaño, extras, total y reserva
 import { viewerMaterials } from './viewer.js';
+import { api, readJson } from './api.js';
 import { form, selectedFiles, state, onChange, showState, tailChoice, tailReady, wait } from './creator/shared.js';
 import { photosToSend } from './creator/photos.js';
 import './creator/wizard.js';
@@ -93,7 +94,7 @@ tailNotesInput.addEventListener('input', syncButtons);
 async function checkServer() {
   try {
     const response = await fetch('/api/health');
-    const result = await response.json();
+    const result = await readJson(response);
     state.serviceReady = Boolean(result.ready);
     if (!state.serviceReady)
       showState('La vista previa no está disponible en este momento. Vuelve a intentarlo más tarde.');
@@ -111,7 +112,7 @@ let previewPass = '';
 async function refreshPass() {
   try {
     const response = await fetch('/api/pass', { cache: 'no-store' });
-    const result = await response.json();
+    const result = await readJson(response);
     previewPass = result.pass || '';
   } catch {
     previewPass = '';
@@ -119,7 +120,7 @@ async function refreshPass() {
 }
 refreshPass();
 function startGeneration(payload) {
-  return fetch('/api/generate', { method: 'POST', body: payload, headers: { 'x-forma-pass': previewPass } });
+  return api('/api/generate', { method: 'POST', body: payload, headers: { 'x-forma-pass': previewPass } });
 }
 
 // --- Generación de la vista previa ---
@@ -168,13 +169,13 @@ async function runGeneration() {
     payload.append('website', document.querySelector('#website').value);
     if (!previewPass) await refreshPass();
     let response = await startGeneration(payload);
-    let started = await response.json();
+    let started = await readJson(response);
     // Si el pase venció (por ejemplo, el servidor se reinició), se pide uno nuevo y se reintenta una vez.
     if (response.status === 403 && started.code === 'pass') {
       await refreshPass();
       await wait(4500);
       response = await startGeneration(payload);
-      started = await response.json();
+      started = await readJson(response);
     }
     // Cada pase sirve una vez: se pide otro para la siguiente vista previa.
     refreshPass();

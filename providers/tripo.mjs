@@ -34,7 +34,7 @@ function technicalNote(code) {
   return '';
 }
 
-// Llama a la API con reintentos ante 429 y errores del servicio, como recomienda Tripo.
+// Llama a la API con reintentos ante 429 (ocupado) y, en las consultas, ante errores del servicio.
 async function call(path, { method = 'GET', json, form } = {}) {
   for (let attempt = 0; attempt < 5; attempt += 1) {
     const response = await fetch(apiBase() + path, {
@@ -43,7 +43,8 @@ async function call(path, { method = 'GET', json, form } = {}) {
       body: json ? JSON.stringify(json) : form,
       signal: AbortSignal.timeout(90_000)
     });
-    if ((response.status === 429 || response.status >= 500) && attempt < 4) {
+    // Ante un 5xx solo se repiten las consultas: un pedido de generación pudo crearse igual, y repetirlo se cobra dos veces.
+    if ((response.status === 429 || (response.status >= 500 && method === 'GET')) && attempt < 4) {
       await wait(retryDelay(response, attempt));
       continue;
     }

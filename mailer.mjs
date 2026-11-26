@@ -1,16 +1,12 @@
 // Avisos por correo de cada reserva: uno al taller y una confirmación al cliente.
 // Se activa definiendo SMTP_HOST, SMTP_USER y SMTP_PASS en .env; sin ellos no se envía nada.
-
-const SPECIES_LABELS = { perro: 'Perro', gato: 'Gato', otro: 'Otro animal' };
+import { formatPrice, SPECIES_LABELS } from './js/rules.js';
 
 function escapeHtml(value) {
   return String(value ?? '').replace(
     /[&<>"']/g,
     (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]
   );
-}
-function formatPrice(value) {
-  return '$' + Number(value).toLocaleString('es-CL');
 }
 
 export function mailConfig(env = process.env) {

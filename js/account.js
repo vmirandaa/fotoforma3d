@@ -1,7 +1,7 @@
 // Página "Mi pedido": seguimiento para clientes (código + correo) e ingreso de administrador.
-import { formatPrice, SPECIES_LABELS } from './catalog.js';
 import { VIEWER_SCRIPT, SAMPLE_WHITE, viewerMaterials, paintMaterials } from './viewer.js';
-import { ORDER_CODE } from './rules.js';
+import { ORDER_CODE, formatPrice, SPECIES_LABELS } from './rules.js';
+import { api, readJson } from './api.js';
 import { el } from './dom.js';
 
 const accountTabs = [
@@ -67,8 +67,6 @@ function formatDate(value, withTime) {
   if (Number.isNaN(date.getTime())) return '';
   return date.toLocaleString('es-CL', withTime ? { dateStyle: 'long', timeStyle: 'short' } : { dateStyle: 'long' });
 }
-const connectionError = (error) =>
-  error.message === 'Failed to fetch' ? 'No pudimos conectar con el sitio. Inténtalo de nuevo.' : error.message;
 function detail(label, value) {
   return el('div', {}, el('dt', label), el('dd', value));
 }
@@ -138,18 +136,18 @@ trackForm.addEventListener('submit', async (event) => {
   }
   setAccountMessage(trackMessage, 'Buscando tu reserva…');
   try {
-    const response = await fetch('/api/tracking', {
+    const response = await api('/api/tracking', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ code, email })
     });
-    const result = await response.json();
+    const result = await readJson(response);
     if (!response.ok) throw new Error(result.error || 'No pudimos buscar tu reserva.');
     tracked = { code: result.code, email };
     setAccountMessage(trackMessage, '');
     renderTracking(result);
   } catch (error) {
-    setAccountMessage(trackMessage, connectionError(error), true);
+    setAccountMessage(trackMessage, error.message, true);
   }
 });
 document.querySelector('#tracking-another').addEventListener('click', () => {
@@ -178,14 +176,14 @@ trackViewButton.addEventListener('click', async () => {
   trackViewButton.textContent = 'Cargando la figura…';
   try {
     const [response] = await Promise.all([
-      fetch('/api/tracking/model', {
+      api('/api/tracking/model', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify(tracked)
       }),
       loadViewerScript()
     ]);
-    if (!response.ok) throw new Error((await response.json()).error || 'No pudimos cargar la figura.');
+    if (!response.ok) throw new Error((await readJson(response)).error || 'No pudimos cargar la figura.');
     const url = URL.createObjectURL(await response.blob());
     const viewer = document.createElement('model-viewer');
     viewer.setAttribute('camera-controls', '');
@@ -225,19 +223,19 @@ adminForm.addEventListener('submit', async (event) => {
   }
   setAccountMessage(adminMessage, 'Ingresando…');
   try {
-    const response = await fetch('/api/admin/login', {
+    const response = await api('/api/admin/login', {
       method: 'POST',
       credentials: 'same-origin',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ user: adminUser.value.trim(), password: adminPassword.value })
     });
-    const result = await response.json();
+    const result = await readJson(response);
     if (!response.ok) throw new Error(result.error || 'No se pudo ingresar.');
     adminPassword.value = '';
     window.location.href = 'admin.html';
   } catch (error) {
     adminPassword.value = '';
-    setAccountMessage(adminMessage, connectionError(error), true);
+    setAccountMessage(adminMessage, error.message, true);
   }
 });
 

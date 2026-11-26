@@ -8,6 +8,12 @@ export const MAX_PHOTO_MB = 10;
 export const MAX_PHOTO_BYTES = MAX_PHOTO_MB * 1024 * 1024;
 export const PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
+// Precio en pesos chilenos: 22990 → $22.990.
+export function formatPrice(value) {
+  return '$' + Number(value).toLocaleString('es-CL');
+}
+export const SPECIES_LABELS = { perro: 'Perro', gato: 'Gato', otro: 'Otro animal' };
+
 // Código de reserva: F- y ocho caracteres hexadecimales (F-ABCDEF12).
 export const ORDER_CODE = /^F-[0-9A-F]{8}$/;
 

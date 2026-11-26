@@ -1,4 +1,5 @@
-import { formatPrice, SPECIES_LABELS } from './catalog.js';
+import { formatPrice, SPECIES_LABELS } from './rules.js';
+import { api, readJson } from './api.js';
 import { viewerMaterials, paintMaterials } from './viewer.js';
 import { el } from './dom.js';
 
@@ -61,7 +62,7 @@ function setMessage(box, text, isError) {
   box.className = 'admin-message' + (isError ? ' error' : '');
 }
 async function adminFetch(url, options = {}) {
-  const response = await fetch(url, {
+  const response = await api(url, {
     ...options,
     credentials: 'same-origin'
   });
@@ -231,7 +232,7 @@ function renderOrders(orders, states) {
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({ status: select.value })
         });
-        const result = await response.json();
+        const result = await readJson(response);
         if (!response.ok) throw new Error(result.error || 'No se pudo guardar el estado.');
         order.status = result.status;
         renderOrders(orders, states);
@@ -373,7 +374,7 @@ photoDialog.addEventListener('click', (event) => {
 async function fetchModel(code) {
   if (modelBlobs.has(code)) return modelBlobs.get(code);
   const response = await adminFetch('/api/admin/model/' + code);
-  if (!response.ok) throw new Error((await response.json()).error || 'No se pudo obtener el modelo.');
+  if (!response.ok) throw new Error((await readJson(response)).error || 'No se pudo obtener el modelo.');
   const blob = await response.blob();
   modelBlobs.set(code, blob);
   return blob;
@@ -455,7 +456,7 @@ viewDownload.addEventListener('click', () => {
 async function loadOrders() {
   setMessage(boardMessage, 'Cargando reservas…');
   const response = await adminFetch('/api/admin/orders');
-  const result = await response.json();
+  const result = await readJson(response);
   if (!response.ok) throw new Error(result.error || 'No se pudieron cargar las reservas.');
   showBoard(true);
   renderOrders(result.orders, result.states);
